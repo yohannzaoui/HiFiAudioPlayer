@@ -3,272 +3,271 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini Music Hi-Res</title>
+    <title>Gemini Music Hi-Res (Bootstrap)</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         :root {
             --bg-color: #ffffff;
             --text-color: #000000;
-            --sidebar-bg: rgba(245, 245, 247, 0.8);
-            --card-bg: #ffffff;
+            --sidebar-bg: rgba(245, 245, 247, 0.85);
             --accent-color: #fa243c;
-            --border-color: rgba(0, 0, 0, 0.1);
-            --glass-effect: blur(20px) saturate(180%);
-            --hover-bg: rgba(0, 0, 0, 0.05);
+            --glass-effect: blur(25px) saturate(180%);
         }
 
         body.dark-theme {
             --bg-color: #000000;
             --text-color: #ffffff;
-            --sidebar-bg: rgba(28, 28, 30, 0.8);
-            --card-bg: #1c1c1e;
-            --border-color: rgba(255, 255, 255, 0.1);
-            --hover-bg: rgba(255, 255, 255, 0.1);
+            --sidebar-bg: rgba(28, 28, 30, 0.85);
         }
 
         body {
             margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
-            transition: background-color 0.4s ease;
+            transition: background-color 0.3s ease;
+            height: 100vh;
             overflow: hidden;
         }
 
-        .app-container { display: flex; height: 100vh; }
+        /* Layout avec Bootstrap */
+        .main-wrapper {
+            display: flex;
+            height: 100vh;
+        }
 
-        /* Sidebar */
         .sidebar {
-            width: 280px;
+            width: 300px;
             background: var(--sidebar-bg);
             backdrop-filter: var(--glass-effect);
             -webkit-backdrop-filter: var(--glass-effect);
-            padding: 30px 15px;
-            border-right: 1px solid var(--border-color);
+            border-right: 1px solid rgba(128, 128, 128, 0.2);
+            padding: 2rem 1rem;
             display: flex;
             flex-direction: column;
+            z-index: 10;
         }
 
-        .library-section {
-            flex: 1;
-            overflow-y: auto;
-            margin-top: 20px;
-        }
-
-        #file-list {
-            list-style: none;
-            padding: 0;
-            margin-top: 10px;
-        }
-
-        #file-list li {
-            padding: 10px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            transition: background 0.2s;
-        }
-
-        #file-list li:hover { background: var(--hover-bg); }
-        #file-list li.playing { color: var(--accent-color); font-weight: bold; }
-
-        .add-btn {
-            background: var(--accent-color);
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            width: 100%;
-        }
-
-        /* Main Player */
-        .player-content {
-            flex: 1;
+        .player-view {
+            flex-grow: 1;
+            background: linear-gradient(180deg, rgba(250, 36, 60, 0.1) 0%, var(--bg-color) 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(180deg, rgba(250, 36, 60, 0.1) 0%, var(--bg-color) 100%);
+            padding: 2rem;
         }
 
-        .album-art img {
-            width: 300px; height: 300px;
-            border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        /* Style Apple Music */
+        .album-art-container img {
+            width: 350px;
+            height: 350px;
+            border-radius: 18px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
             object-fit: cover;
         }
 
-        .track-info { text-align: center; margin: 30px 0; }
+        .list-group-item {
+            background: transparent !important;
+            color: var(--text-color) !important;
+            border: none;
+            cursor: pointer;
+            border-radius: 8px !important;
+            margin-bottom: 2px;
+            font-size: 0.9rem;
+        }
+
+        .list-group-item:hover {
+            background: rgba(128, 128, 128, 0.1) !important;
+        }
+
+        .list-group-item.active-track {
+            color: var(--accent-color) !important;
+            font-weight: 600;
+            background: rgba(250, 36, 60, 0.1) !important;
+        }
+
         .hi-res-badge {
-            font-size: 9px; border: 1px solid var(--text-color);
-            padding: 2px 5px; border-radius: 3px; opacity: 0.6;
+            font-size: 0.6rem;
+            letter-spacing: 1px;
+            border: 1px solid var(--text-color);
+            padding: 2px 6px;
+            border-radius: 4px;
+            opacity: 0.7;
+            text-transform: uppercase;
         }
 
-        .controls { width: 100%; max-width: 450px; text-align: center; }
-        input[type="range"] { width: 100%; accent-color: var(--accent-color); margin-bottom: 20px; }
-
-        .buttons { display: flex; justify-content: center; align-items: center; gap: 30px; }
         .play-btn {
-            background: var(--text-color); color: var(--bg-color);
-            width: 55px; height: 55px; border-radius: 50%; border: none; font-size: 20px; cursor: pointer;
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            background-color: var(--text-color);
+            color: var(--bg-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            font-size: 1.5rem;
+            transition: transform 0.2s;
         }
 
-        .settings-panel { padding-top: 20px; border-top: 1px solid var(--border-color); display: flex; gap: 5px; flex-direction: column;}
-        select, .ui-btn { padding: 8px; border-radius: 5px; background: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); }
+        .play-btn:active { transform: scale(0.95); }
+
+        input[type="range"] { accent-color: var(--accent-color); }
+        
+        /* Personnalisation Bootstrap */
+        .btn-apple { background-color: var(--accent-color); color: white; border: none; font-weight: 500; }
+        .btn-apple:hover { background-color: #d91e34; color: white; }
     </style>
 </head>
 <body class="light-theme">
 
-    <div class="app-container">
+    <div class="main-wrapper">
         <aside class="sidebar">
-            <h2 id="menu-title">Bibliothèque</h2>
+            <h4 id="sidebar-title" class="px-3 mb-4">Bibliothèque</h4>
             
-            <input type="file" id="file-input" hidden multiple accept="audio/*">
-            <button class="add-btn" onclick="document.getElementById('file-input').click()">+ Ajouter des titres</button>
-
-            <div class="library-section">
-                <ul id="file-list">
-                    </ul>
+            <div class="px-3 mb-3">
+                <input type="file" id="file-input" hidden multiple accept="audio/*">
+                <button class="btn btn-apple w-100 py-2 shadow-sm" onclick="document.getElementById('file-input').click()">
+                    + Ajouter de la musique
+                </button>
             </div>
 
-            <div class="settings-panel">
-                <select id="lang-selector">
-                    <option value="fr">Français</option>
-                    <option value="en">English</option>
-                </select>
-                <button id="theme-toggle" class="ui-btn">Thème Sombre/Clair</button>
+            <div class="flex-grow-1 overflow-auto px-2">
+                <div class="list-group" id="playlist-container">
+                    </div>
+            </div>
+
+            <div class="mt-auto px-3 pt-3 border-top border-secondary border-opacity-25">
+                <div class="mb-2">
+                    <label class="small opacity-75 mb-1 d-block">Langue</label>
+                    <select id="lang-select" class="form-select form-select-sm bg-transparent text-reset border-secondary border-opacity-50">
+                        <option value="fr">Français</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+                <button id="theme-btn" class="btn btn-sm btn-outline-secondary w-100">Mode Sombre / Clair</button>
             </div>
         </aside>
 
-        <main class="player-content">
-            <div class="album-art">
-                <img src="https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?q=80&w=1000" alt="Cover" id="cover">
+        <main class="player-view">
+            <div class="album-art-container mb-4">
+                <img id="main-cover" src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=1000" alt="Cover">
             </div>
 
-            <div class="track-info">
-                <h1 id="track-title">Sélectionnez un titre</h1>
-                <p id="track-artist">Ma Musique</p>
-                <span class="hi-res-badge">HI-RES LOSSLESS</span>
+            <div class="text-center mb-4">
+                <h2 id="display-title" class="fw-bold mb-1">Aucun titre</h2>
+                <p id="display-artist" class="text-secondary mb-2">Sélectionnez un fichier</p>
+                <span class="hi-res-badge">Hi-Res Lossless</span>
             </div>
-            
-            <div class="controls">
-                <input type="range" id="progress-bar" value="0">
-                <div class="buttons">
-                    <button onclick="prevTrack()" style="background:none; border:none; color:var(--text-color); font-size:24px; cursor:pointer;">⏮</button>
-                    <button class="play-btn" id="play-pause">▶</button>
-                    <button onclick="nextTrack()" style="background:none; border:none; color:var(--text-color); font-size:24px; cursor:pointer;">⏭</button>
+
+            <div class="w-100" style="max-width: 500px;">
+                <input type="range" class="form-range" id="seek-bar" value="0">
+                <div class="d-flex justify-content-center align-items-center gap-4 mt-3">
+                    <button class="btn text-reset fs-3" onclick="prev()">⏮</button>
+                    <button class="play-btn shadow" id="master-play">▶</button>
+                    <button class="btn text-reset fs-3" onclick="next()">⏭</button>
                 </div>
             </div>
         </main>
     </div>
 
-    <audio id="audio-player"></audio>
+    <audio id="core-audio"></audio>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        const audio = document.getElementById('audio-player');
-        const fileInput = document.getElementById('file-input');
-        const fileListDisplay = document.getElementById('file-list');
-        const playBtn = document.getElementById('play-pause');
-        const progressBar = document.getElementById('progress-bar');
+        const audio = document.getElementById('core-audio');
+        const playlistContainer = document.getElementById('playlist-container');
+        const masterPlay = document.getElementById('master-play');
+        const seekBar = document.getElementById('seek-bar');
         
         let playlist = [];
-        let currentIndex = 0;
+        let currentIndex = -1;
 
-        // --- CHARGEMENT DES FICHIERS ---
-        fileInput.addEventListener('change', (e) => {
+        // --- GESTION FICHIERS ---
+        document.getElementById('file-input').onchange = (e) => {
             const files = Array.from(e.target.files);
             files.forEach(file => {
                 playlist.push(file);
-                const li = document.createElement('li');
-                li.innerText = file.name.replace(/\.[^/.]+$/, ""); // Enlever l'extension
-                li.onclick = () => playTrack(playlist.indexOf(file));
-                fileListDisplay.appendChild(li);
+                renderPlaylist();
             });
-            if (playlist.length > 0 && audio.paused && !audio.src) {
-                loadTrack(0);
-            }
-        });
+            if (currentIndex === -1 && playlist.length > 0) loadTrack(0);
+        };
 
-        function loadTrack(index) {
+        function renderPlaylist() {
+            playlistContainer.innerHTML = '';
+            playlist.forEach((file, index) => {
+                const btn = document.createElement('button');
+                btn.className = `list-group-item list-group-item-action ${index === currentIndex ? 'active-track' : ''}`;
+                btn.innerText = file.name.replace(/\.[^/.]+$/, "");
+                btn.onclick = () => loadTrack(index, true);
+                playlistContainer.appendChild(btn);
+            });
+        }
+
+        function loadTrack(index, autoPlay = false) {
+            if (index < 0 || index >= playlist.length) return;
             currentIndex = index;
             const file = playlist[index];
-            const fileURL = URL.createObjectURL(file);
-            audio.src = fileURL;
-            document.getElementById('track-title').innerText = file.name.replace(/\.[^/.]+$/, "");
-            
-            // Mise à jour visuelle de la liste
-            Array.from(fileListDisplay.children).forEach((li, i) => {
-                li.className = i === index ? 'playing' : '';
-            });
+            audio.src = URL.createObjectURL(file);
+            document.getElementById('display-title').innerText = file.name.replace(/\.[^/.]+$/, "");
+            renderPlaylist();
+            if (autoPlay) { audio.play(); masterPlay.innerText = "⏸"; }
         }
 
-        function playTrack(index) {
-            loadTrack(index);
-            audio.play();
-            playBtn.innerText = "⏸";
-        }
+        // --- COMMANDES ---
+        masterPlay.onclick = () => {
+            if (audio.paused) { audio.play(); masterPlay.innerText = "⏸"; }
+            else { audio.pause(); masterPlay.innerText = "▶"; }
+        };
 
-        // --- CONTRÔLES ---
-        playBtn.addEventListener('click', () => {
-            if (playlist.length === 0) return;
-            if (audio.paused) {
-                audio.play();
-                playBtn.innerText = "⏸";
-            } else {
-                audio.pause();
-                playBtn.innerText = "▶";
-            }
-        });
+        function next() { if (currentIndex < playlist.length - 1) loadTrack(currentIndex + 1, true); }
+        function prev() { if (currentIndex > 0) loadTrack(currentIndex - 1, true); }
 
-        function nextTrack() {
-            if (currentIndex < playlist.length - 1) playTrack(currentIndex + 1);
-        }
-
-        function prevTrack() {
-            if (currentIndex > 0) playTrack(currentIndex - 1);
-        }
-
-        // Barre de progression
         audio.ontimeupdate = () => {
-            const progress = (audio.currentTime / audio.duration) * 100;
-            progressBar.value = progress || 0;
+            seekBar.value = (audio.currentTime / audio.duration) * 100 || 0;
         };
 
-        progressBar.oninput = () => {
-            const time = (progressBar.value * audio.duration) / 100;
-            audio.currentTime = time;
+        seekBar.oninput = () => {
+            audio.currentTime = (seekBar.value * audio.duration) / 100;
         };
 
-        // --- PRÉFÉRENCES (Sauvegarde Auto) ---
-        const themeToggle = document.getElementById('theme-toggle');
-        const langSelector = document.getElementById('lang-selector');
+        // --- PRÉFÉRENCES (Sauvegarde Automatique) ---
+        const themeBtn = document.getElementById('theme-btn');
+        const langSelect = document.getElementById('lang-select');
 
-        window.onload = () => {
-            applyTheme(localStorage.getItem('user-theme') || 'light-theme');
-            applyLang(localStorage.getItem('user-lang') || 'fr');
-            langSelector.value = localStorage.getItem('user-lang') || 'fr';
-        };
-
-        themeToggle.addEventListener('click', () => {
-            const newTheme = document.body.classList.contains('dark-theme') ? 'light-theme' : 'dark-theme';
-            applyTheme(newTheme);
+        // Initialisation au chargement
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('pref-theme') || 'light-theme';
+            const savedLang = localStorage.getItem('pref-lang') || 'fr';
+            
+            applyTheme(savedTheme);
+            applyLang(savedLang);
+            langSelect.value = savedLang;
         });
 
-        function applyTheme(t) {
-            document.body.className = t;
-            localStorage.setItem('user-theme', t);
+        themeBtn.onclick = () => {
+            const target = document.body.classList.contains('dark-theme') ? 'light-theme' : 'dark-theme';
+            applyTheme(target);
+        };
+
+        langSelect.onchange = (e) => applyLang(e.target.value);
+
+        function applyTheme(theme) {
+            document.body.className = theme;
+            localStorage.setItem('pref-theme', theme);
         }
 
-        langSelector.onchange = (e) => applyLang(e.target.value);
-
-        function applyLang(l) {
-            localStorage.setItem('user-lang', l);
-            const t = { fr: "Bibliothèque", en: "Library" };
-            document.getElementById('menu-title').innerText = t[l];
+        function applyLang(lang) {
+            localStorage.setItem('pref-lang', lang);
+            const ui = {
+                fr: { title: "Bibliothèque", btn: "Mode Sombre/Clair", add: "+ Ajouter de la musique" },
+                en: { title: "Library", btn: "Dark/Light Mode", add: "+ Add Music" }
+            };
+            document.getElementById('sidebar-title').innerText = ui[lang].title;
+            themeBtn.innerText = ui[lang].btn;
+            document.querySelector('.btn-apple').innerText = ui[lang].add;
         }
     </script>
 </body>

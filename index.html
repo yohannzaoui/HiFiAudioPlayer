@@ -1,23 +1,18 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini Music Hi-Res (Bootstrap)</title>
+    <title>Hi-Res Music Player (Dark Mode Only)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #ffffff;
-            --text-color: #000000;
-            --sidebar-bg: rgba(245, 245, 247, 0.85);
-            --accent-color: #fa243c;
-            --glass-effect: blur(25px) saturate(180%);
-        }
-
-        body.dark-theme {
             --bg-color: #000000;
             --text-color: #ffffff;
             --sidebar-bg: rgba(28, 28, 30, 0.85);
+            --accent-color: #fa243c;
+            --glass-effect: blur(25px) saturate(180%);
+            --border-color: rgba(255, 255, 255, 0.1);
         }
 
         body {
@@ -25,12 +20,10 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
-            transition: background-color 0.3s ease;
             height: 100vh;
             overflow: hidden;
         }
 
-        /* Layout avec Bootstrap */
         .main-wrapper {
             display: flex;
             height: 100vh;
@@ -41,16 +34,15 @@
             background: var(--sidebar-bg);
             backdrop-filter: var(--glass-effect);
             -webkit-backdrop-filter: var(--glass-effect);
-            border-right: 1px solid rgba(128, 128, 128, 0.2);
+            border-right: 1px solid var(--border-color);
             padding: 2rem 1rem;
             display: flex;
             flex-direction: column;
-            z-index: 10;
         }
 
         .player-view {
             flex-grow: 1;
-            background: linear-gradient(180deg, rgba(250, 36, 60, 0.1) 0%, var(--bg-color) 100%);
+            background: linear-gradient(180deg, rgba(250, 36, 60, 0.15) 0%, var(--bg-color) 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -58,12 +50,11 @@
             padding: 2rem;
         }
 
-        /* Style Apple Music */
         .album-art-container img {
             width: 350px;
             height: 350px;
             border-radius: 18px;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.6);
             object-fit: cover;
         }
 
@@ -78,19 +69,19 @@
         }
 
         .list-group-item:hover {
-            background: rgba(128, 128, 128, 0.1) !important;
+            background: rgba(255, 255, 255, 0.1) !important;
         }
 
         .list-group-item.active-track {
             color: var(--accent-color) !important;
             font-weight: 600;
-            background: rgba(250, 36, 60, 0.1) !important;
+            background: rgba(250, 36, 60, 0.15) !important;
         }
 
         .hi-res-badge {
             font-size: 0.6rem;
             letter-spacing: 1px;
-            border: 1px solid var(--text-color);
+            border: 1px solid rgba(255, 255, 255, 0.5);
             padding: 2px 6px;
             border-radius: 4px;
             opacity: 0.7;
@@ -101,8 +92,8 @@
             width: 65px;
             height: 65px;
             border-radius: 50%;
-            background-color: var(--text-color);
-            color: var(--bg-color);
+            background-color: white;
+            color: black;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -115,38 +106,26 @@
 
         input[type="range"] { accent-color: var(--accent-color); }
         
-        /* Personnalisation Bootstrap */
         .btn-apple { background-color: var(--accent-color); color: white; border: none; font-weight: 500; }
         .btn-apple:hover { background-color: #d91e34; color: white; }
     </style>
 </head>
-<body class="light-theme">
+<body>
 
     <div class="main-wrapper">
         <aside class="sidebar">
-            <h4 id="sidebar-title" class="px-3 mb-4">Bibliothèque</h4>
+            <h4 class="px-3 mb-4">Library</h4>
             
             <div class="px-3 mb-3">
                 <input type="file" id="file-input" hidden multiple accept="audio/*">
                 <button class="btn btn-apple w-100 py-2 shadow-sm" onclick="document.getElementById('file-input').click()">
-                    + Ajouter de la musique
+                    + Add Music
                 </button>
             </div>
 
             <div class="flex-grow-1 overflow-auto px-2">
                 <div class="list-group" id="playlist-container">
                     </div>
-            </div>
-
-            <div class="mt-auto px-3 pt-3 border-top border-secondary border-opacity-25">
-                <div class="mb-2">
-                    <label class="small opacity-75 mb-1 d-block">Langue</label>
-                    <select id="lang-select" class="form-select form-select-sm bg-transparent text-reset border-secondary border-opacity-50">
-                        <option value="fr">Français</option>
-                        <option value="en">English</option>
-                    </select>
-                </div>
-                <button id="theme-btn" class="btn btn-sm btn-outline-secondary w-100">Mode Sombre / Clair</button>
             </div>
         </aside>
 
@@ -156,25 +135,23 @@
             </div>
 
             <div class="text-center mb-4">
-                <h2 id="display-title" class="fw-bold mb-1">Aucun titre</h2>
-                <p id="display-artist" class="text-secondary mb-2">Sélectionnez un fichier</p>
+                <h2 id="display-title" class="fw-bold mb-1">No track selected</h2>
+                <p id="display-artist" class="text-secondary mb-2">Select a file from library</p>
                 <span class="hi-res-badge">Hi-Res Lossless</span>
             </div>
 
             <div class="w-100" style="max-width: 500px;">
                 <input type="range" class="form-range" id="seek-bar" value="0">
                 <div class="d-flex justify-content-center align-items-center gap-4 mt-3">
-                    <button class="btn text-reset fs-3" onclick="prev()">⏮</button>
+                    <button class="btn text-white fs-3" onclick="prev()">⏮</button>
                     <button class="play-btn shadow" id="master-play">▶</button>
-                    <button class="btn text-reset fs-3" onclick="next()">⏭</button>
+                    <button class="btn text-white fs-3" onclick="next()">⏭</button>
                 </div>
             </div>
         </main>
     </div>
 
     <audio id="core-audio"></audio>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         const audio = document.getElementById('core-audio');
@@ -185,7 +162,6 @@
         let playlist = [];
         let currentIndex = -1;
 
-        // --- GESTION FICHIERS ---
         document.getElementById('file-input').onchange = (e) => {
             const files = Array.from(e.target.files);
             files.forEach(file => {
@@ -216,7 +192,6 @@
             if (autoPlay) { audio.play(); masterPlay.innerText = "⏸"; }
         }
 
-        // --- COMMANDES ---
         masterPlay.onclick = () => {
             if (audio.paused) { audio.play(); masterPlay.innerText = "⏸"; }
             else { audio.pause(); masterPlay.innerText = "▶"; }
@@ -232,43 +207,6 @@
         seekBar.oninput = () => {
             audio.currentTime = (seekBar.value * audio.duration) / 100;
         };
-
-        // --- PRÉFÉRENCES (Sauvegarde Automatique) ---
-        const themeBtn = document.getElementById('theme-btn');
-        const langSelect = document.getElementById('lang-select');
-
-        // Initialisation au chargement
-        window.addEventListener('DOMContentLoaded', () => {
-            const savedTheme = localStorage.getItem('pref-theme') || 'light-theme';
-            const savedLang = localStorage.getItem('pref-lang') || 'fr';
-            
-            applyTheme(savedTheme);
-            applyLang(savedLang);
-            langSelect.value = savedLang;
-        });
-
-        themeBtn.onclick = () => {
-            const target = document.body.classList.contains('dark-theme') ? 'light-theme' : 'dark-theme';
-            applyTheme(target);
-        };
-
-        langSelect.onchange = (e) => applyLang(e.target.value);
-
-        function applyTheme(theme) {
-            document.body.className = theme;
-            localStorage.setItem('pref-theme', theme);
-        }
-
-        function applyLang(lang) {
-            localStorage.setItem('pref-lang', lang);
-            const ui = {
-                fr: { title: "Bibliothèque", btn: "Mode Sombre/Clair", add: "+ Ajouter de la musique" },
-                en: { title: "Library", btn: "Dark/Light Mode", add: "+ Add Music" }
-            };
-            document.getElementById('sidebar-title').innerText = ui[lang].title;
-            themeBtn.innerText = ui[lang].btn;
-            document.querySelector('.btn-apple').innerText = ui[lang].add;
-        }
     </script>
 </body>
 </html>

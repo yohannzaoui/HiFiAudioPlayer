@@ -3,36 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hi-Res Dark Player</title>
+    <title>Hi-Res Dark Player - Volume Pro</title>
     <style>
-        /* CSS Variables for easy theme management */
         :root {
             --bg-primary: #0f0f0f;
             --bg-secondary: #1e1e1e;
-            --accent-color: #00e676; /* Hi-Res Green */
+            --accent-color: #00e676; 
             --text-main: #ffffff;
             --text-dim: #b0b0b0;
         }
 
         body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0; padding: 0;
+            font-family: 'Segoe UI', sans-serif;
             background-color: var(--bg-primary);
             color: var(--text-main);
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            display: flex; justify-content: center; align-items: center;
             height: 100vh;
-            transition: background-color 0.3s ease;
         }
 
         .player-card {
             background-color: var(--bg-secondary);
-            padding: 2rem;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            width: 350px;
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+            width: 380px;
             text-align: center;
         }
 
@@ -43,154 +38,140 @@
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 0.75rem;
-            font-weight: bold;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
             text-transform: uppercase;
         }
 
         #file-name {
-            font-size: 1.2rem;
-            margin: 10px 0;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            font-size: 1.1rem;
+            margin: 15px 0;
+            color: var(--text-main);
+            font-weight: 500;
         }
 
-        .controls {
-            margin-top: 20px;
-        }
-
-        input[type="file"] {
-            display: none;
-        }
-
+        /* Custom File Input */
         .custom-file-upload {
             background-color: var(--accent-color);
             color: #000;
-            padding: 10px 20px;
-            border-radius: 8px;
+            padding: 12px 24px;
+            border-radius: 30px;
             cursor: pointer;
             font-weight: bold;
             display: inline-block;
             margin-bottom: 20px;
+            transition: transform 0.2s;
+        }
+        .custom-file-upload:hover { transform: scale(1.05); }
+
+        /* VOLUME SLIDER STYLING */
+        .volume-container {
+            margin: 25px 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .volume-label { font-size: 0.85rem; color: var(--text-dim); min-width: 40px; }
+
+        input[type="range"] {
+            flex-grow: 1;
+            cursor: pointer;
+            accent-color: var(--accent-color);
+            height: 4px;
         }
 
         audio {
             width: 100%;
-            margin-top: 20px;
-            filter: invert(100%) hue-rotate(180deg) brightness(1.5); /* Adapting standard player to dark mode */
+            margin-top: 10px;
+            filter: invert(90%) hue-rotate(180deg) brightness(1.2);
         }
 
         .settings-info {
-            margin-top: 20px;
-            font-size: 0.8rem;
+            margin-top: 25px;
+            font-size: 0.75rem;
             color: var(--text-dim);
-            border-top: 1px solid #333;
-            padding-top: 10px;
+            opacity: 0.6;
         }
     </style>
 </head>
 <body class="dark-mode">
 
     <div class="player-card">
-        <div class="status-badge" id="quality-tag">Hi-Res Engine Ready</div>
+        <div class="status-badge" id="quality-tag">Ready for Hi-Res</div>
         
-        <label for="file-input" class="custom-file-upload">
-            Open FLAC / WAV
-        </label>
+        <label for="file-input" class="custom-file-upload">Select Music File</label>
         <input type="file" id="file-input" accept="audio/*">
 
-        <div id="file-name">No file selected</div>
+        <div id="file-name">No track loaded</div>
         
+        <div class="volume-container">
+            <span class="volume-label">Vol</span>
+            <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.7">
+            <span id="volume-value" class="volume-label">70%</span>
+        </div>
+
         <audio id="main-player" controls></audio>
 
         <div class="settings-info">
-            App Mode: <span id="current-theme">Dark</span> | 
-            Language: <span id="current-lang">English</span>
+            Engine: WebAudio | Theme: Dark | Lang: English
         </div>
     </div>
 
     <script>
+        const audioPlayer = document.getElementById('main-player');
+        const volumeSlider = document.getElementById('volume-slider');
+        const volumeValue = document.getElementById('volume-value');
+        const fileInput = document.getElementById('file-input');
+        const fileNameDisplay = document.getElementById('file-name');
+
         /**
-         * PREFERENCES MANAGEMENT
-         * Automatically saves and loads Language and Theme
+         * 1. LOAD PREFERENCES (INCLUDING VOLUME)
          */
-        const AppSettings = {
-            data: {
-                theme: 'dark',
-                language: 'en'
-            },
-
-            init() {
-                this.load();
-                this.apply();
-            },
-
-            save() {
-                localStorage.setItem('hires_app_prefs', JSON.stringify(this.data));
-                console.log("Preferences saved automatically.");
-            },
-
-            load() {
-                const saved = localStorage.getItem('hires_app_prefs');
-                if (saved) {
-                    this.data = JSON.parse(saved);
-                } else {
-                    // Default values if first time
-                    this.save();
-                }
-            },
-
-            apply() {
-                // Apply Dark Mode (always on as per request)
-                if (this.data.theme === 'dark') {
-                    document.body.classList.add('dark-mode');
-                }
-                
-                // Apply Language
-                document.documentElement.lang = this.data.language;
-                
-                // Update UI Labels
-                document.getElementById('current-theme').textContent = this.data.theme.charAt(0).toUpperCase() + this.data.theme.slice(1);
-                document.getElementById('current-lang').textContent = this.data.language === 'en' ? 'English' : this.data.language;
-            }
+        window.onload = () => {
+            const savedPrefs = JSON.parse(localStorage.getItem('hires_app_prefs')) || {};
+            
+            // Set default volume if not saved
+            const savedVol = savedPrefs.volume !== undefined ? savedPrefs.volume : 0.7;
+            
+            // Apply volume to player and UI
+            audioPlayer.volume = savedVol;
+            volumeSlider.value = savedVol;
+            updateVolumeLabel(savedVol);
+            
+            console.log("App initialized with Dark Mode & English.");
         };
 
         /**
-         * AUDIO PLAYER LOGIC
+         * 2. VOLUME CONTROL LOGIC
          */
-        const fileInput = document.getElementById('file-input');
-        const audioPlayer = document.getElementById('main-player');
-        const fileNameDisplay = document.getElementById('file-name');
-        const qualityTag = document.getElementById('quality-tag');
+        volumeSlider.addEventListener('input', (e) => {
+            const val = e.target.value;
+            audioPlayer.volume = val;
+            updateVolumeLabel(val);
+            saveVolumePreference(val);
+        });
 
+        function updateVolumeLabel(val) {
+            volumeValue.textContent = Math.round(val * 100) + "%";
+        }
+
+        function saveVolumePreference(val) {
+            const prefs = { theme: 'dark', language: 'en', volume: val };
+            localStorage.setItem('hires_app_prefs', JSON.stringify(prefs));
+        }
+
+        /**
+         * 3. FILE LOADING LOGIC
+         */
         fileInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
-                // Update UI with file name
                 fileNameDisplay.textContent = file.name;
-                
-                // Create local URL for the file
                 const url = URL.createObjectURL(file);
                 audioPlayer.src = url;
-                
-                // Basic check for Hi-Res indication (by extension)
-                const ext = file.name.split('.').pop().toLowerCase();
-                if (ext === 'flac' || ext === 'wav' || ext === 'dsd') {
-                    qualityTag.textContent = "High Fidelity Lossless";
-                    qualityTag.style.borderColor = "#00e676";
-                } else {
-                    qualityTag.textContent = "Standard Compressed";
-                    qualityTag.style.borderColor = "#ffb300";
-                }
-
                 audioPlayer.play();
             }
         });
-
-        // Initialize settings on load
-        window.onload = () => AppSettings.init();
-
     </script>
 </body>
 </html>

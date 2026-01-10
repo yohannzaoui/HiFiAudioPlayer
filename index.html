@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hi-Res Dark Player</title>
+    <title>HiFi Audio Player</title>
     <style>
         :root {
             --bg-primary: #0a0a0a;
@@ -89,7 +89,9 @@
 <body>
 
     <div class="player-card">
-        <div id="badge" style="color: var(--accent); font-size: 10px; margin-bottom: 15px; font-weight: bold;">HI-RES ENGINE ACTIVE</div>
+        <div id="badge" style="color: var(--accent); font-size: 11px; margin-bottom: 15px; font-weight: bold; letter-spacing: 1.5px; text-transform: uppercase;">
+            HiFi Audio Player
+        </div>
 
         <label for="file-input" class="upload-btn">
             Load Track
@@ -116,7 +118,7 @@
         const volSlider = document.getElementById('vol-slider');
         const volPct = document.getElementById('vol-pct');
 
-        // Preferences Persistence
+        // Preferences Persistence (Auto-load)
         window.onload = () => {
             const saved = JSON.parse(localStorage.getItem('my_player_settings'));
             if (saved) {
@@ -126,7 +128,7 @@
             }
         };
 
-        // File Loading
+        // File Selection Logic
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
@@ -137,7 +139,7 @@
             }
         });
 
-        // Volume Logic
+        // Volume Logic + Auto-save
         volSlider.addEventListener('input', (e) => {
             const val = e.target.value;
             player.volume = val;

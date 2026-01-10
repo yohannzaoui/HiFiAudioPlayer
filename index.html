@@ -69,20 +69,7 @@
         audio {
             width: 100%;
             filter: invert(1);
-            margin-bottom: 20px;
-        }
-
-        .volume-box {
-            background: #222;
-            padding: 15px;
-            border-radius: 15px;
-            margin-top: 10px;
-        }
-
-        input[type="range"] {
-            width: 100%;
-            accent-color: var(--accent);
-            cursor: pointer;
+            margin-bottom: 5px;
         }
     </style>
 </head>
@@ -101,31 +88,22 @@
         <div id="file-name">No file loaded</div>
 
         <audio id="player" controls></audio>
-
-        <div class="volume-box">
-            <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px;">
-                <span>Volume</span>
-                <span id="vol-pct">70%</span>
-            </div>
-            <input type="range" id="vol-slider" min="0" max="1" step="0.01" value="0.7">
-        </div>
     </div>
 
     <script>
         const player = document.getElementById('player');
         const fileInput = document.getElementById('file-input');
         const fileName = document.getElementById('file-name');
-        const volSlider = document.getElementById('vol-slider');
-        const volPct = document.getElementById('vol-pct');
 
-        // Preferences Persistence (Auto-load)
+        // Preferences Persistence
         window.onload = () => {
-            const saved = JSON.parse(localStorage.getItem('my_player_settings'));
-            if (saved) {
-                player.volume = saved.volume;
-                volSlider.value = saved.volume;
-                volPct.textContent = Math.round(saved.volume * 100) + "%";
-            }
+            const settings = {
+                theme: 'dark',
+                lang: 'en'
+            };
+            // Save/Confirm dark mode and english preference
+            localStorage.setItem('my_player_settings', JSON.stringify(settings));
+            document.documentElement.lang = settings.lang;
         };
 
         // File Selection Logic
@@ -137,20 +115,6 @@
                 player.src = url;
                 player.play();
             }
-        });
-
-        // Volume Logic + Auto-save
-        volSlider.addEventListener('input', (e) => {
-            const val = e.target.value;
-            player.volume = val;
-            volPct.textContent = Math.round(val * 100) + "%";
-            
-            const settings = {
-                volume: val,
-                theme: 'dark',
-                lang: 'en'
-            };
-            localStorage.setItem('my_player_settings', JSON.stringify(settings));
         });
     </script>
 </body>

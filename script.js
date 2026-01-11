@@ -116,13 +116,10 @@ playPauseBtn.onclick = () => {
     player.paused ? (player.play(), playPauseBtn.innerText = 'PAUSE') : (player.pause(), playPauseBtn.innerText = 'PLAY');
 };
 
-// --- LOGIQUE NEXT/PREV MODIFIÉE ---
 function nextTrack() {
     if (playlist.length === 0) return;
-    // Si REPEAT:ONE est actif, on recommence la même piste
-    if (repeatMode === 'ONE') {
-        playTrack(currentIndex);
-    } else {
+    if (repeatMode === 'ONE') playTrack(currentIndex);
+    else {
         let next = (currentIndex + 1) % playlist.length;
         if (isShuffle) next = Math.floor(Math.random() * playlist.length);
         playTrack(next);
@@ -131,12 +128,8 @@ function nextTrack() {
 
 function prevTrack() {
     if (playlist.length === 0) return;
-    // Si REPEAT:ONE est actif, on recommence la même piste
-    if (repeatMode === 'ONE') {
-        playTrack(currentIndex);
-    } else {
-        playTrack((currentIndex - 1 + playlist.length) % playlist.length);
-    }
+    if (repeatMode === 'ONE') playTrack(currentIndex);
+    else playTrack((currentIndex - 1 + playlist.length) % playlist.length);
 }
 
 player.onended = () => {

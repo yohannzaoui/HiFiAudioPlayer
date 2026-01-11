@@ -1,189 +1,236 @@
+/**
+ * HiFi Audio Player - Core Engine
+ * Stable Base v4.0 [2026-01-11]
+ */
+
 const player = document.getElementById('player');
 const playPauseBtn = document.getElementById('play-pause-btn');
-const muteBtn = document.getElementById('mute-btn');
 const progressBar = document.getElementById('progress-bar');
 const progressContainer = document.getElementById('progress-container');
 const volumeBar = document.getElementById('volume-bar');
 const volumeContainer = document.getElementById('volume-container');
-const volumePercent = document.getElementById('volume-percent');
-const currentTimeDisp = document.getElementById('current-time');
-const durationDisp = document.getElementById('duration');
-const fileInput = document.getElementById('file-input');
 const playlistContainer = document.getElementById('playlist');
-const repeatBtn = document.getElementById('repeat-btn');
+const fileInput = document.getElementById('file-input');
 
 let playlist = [];
 let currentIndex = 0;
-let repeatMode = 'off';
-let isDraggingVolume = false;
-let currentArtUrl = null;
+let isShuffle = false;
+let repeatMode = 'OFF'; // Options: OFF, ONE, ALL
 
-window.onload = () => {
-    const settings = JSON.parse(localStorage.getItem('my_player_settings')) || {volume: 0.05};
-    player.volume = settings.volume;
-    updateVolumeUI(settings.volume);
-};
+// --- 1. INITIALIZATION & STORAGE ---
 
-function updateVolumeFromEvent(e) {
-    const rect = volumeContainer.getBoundingClientRect();
-    let offsetX = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
-    const vol = offsetX / rect.width;
-    player.volume = vol;
-    player.muted = false;
-    updateVolumeUI(vol);
-    muteBtn.classList.remove('mute-active');
-    muteBtn.textContent = 'Mute: OFF';
-    localStorage.setItem('my_player_settings', JSON.stringify({volume: vol}));
-}
+window.addEventListener('load', () => {
+    // Restore Volume from Preferences
+    const savedVol = localStorage.getItem('hifi-volume') || 0.05;
+    player.volume = savedVol;
+    volumeBar.style.width = (savedVol * 100) + '%';
+    document.getElementById('volume-percent').innerText = Math.round(savedVol * 100) + '%';
+});
 
-volumeContainer.onmousedown = (e) => { isDraggingVolume = true; updateVolumeFromEvent(e); };
-window.onmousemove = (e) => { if (isDraggingVolume) updateVolumeFromEvent(e); };
-window.onmouseup = () => { isDraggingVolume = false; };
+// --- 2. FILE HANDLING ---
 
-function updateVolumeUI(v) {
-    const pc = Math.round(v * 100);
-    volumeBar.style.width = `${pc}%`;
-    volumePercent.textContent = `${pc}%`;
-}
-
-function toggleMute() {
-    player.muted = !player.muted;
-    muteBtn.textContent = player.muted ? 'Mute: ON' : 'Mute: OFF';
-    player.muted ? muteBtn.classList.add('mute-active') : muteBtn.classList.remove('mute-active');
-    updateVolumeUI(player.muted ? 0 : player.volume);
-}
-
-fileInput.onchange = (e) => {
+fileInput.addEventListener('change', (e) => {
     const files = Array.from(e.target.files);
-    if (!files.length) return;
-    const startIdx = playlist.length;
-    files.forEach((f, i) => {
-        const itemIndex = startIdx + i;
-        playlist.push({ file: f, displayName: f.name.replace(/\.[^/.]+$/, ""), artist: "Unknown Artist", format: f.name.split('.').pop().toUpperCase() });
-        jsmediatags.read(f, {
-            onSuccess: (tag) => {
-                if (tag.tags.title) playlist[itemIndex].displayName = tag.tags.title;
-                if (tag.tags.artist) playlist[itemIndex].artist = tag.tags.artist;
-                renderPlaylist();
-                if (itemIndex === currentIndex) updateInfoDisplay();
-            },
-            onError: () => renderPlaylist()
+    if (files.length === 0) return;
+
+    const isFirstLoad = playlist.length === 0;
+
+    files.forEach(file => {
+        playlist.push({
+            name: file.name.replace(/\.[^/.]+$/, ""),
+            url: URL.createObjectURL(file),
+            file: file
         });
     });
+
     renderPlaylist();
-    if (startIdx === 0) playTrack(0);
-    fileInput.value = "";
-};
+    if (isFirstLoad) playTrack(0);
+});
 
-function playTrack(i) {
-    if (i < 0 || i >= playlist.length) return;
-    currentIndex = i;
-    if (player.src) URL.revokeObjectURL(player.src);
-    player.src = URL.createObjectURL(playlist[i].file);
-    updateInfoDisplay();
-    loadArt(playlist[i].file);
-    player.play();
-}
-
-function loadArt(f) {
-    const artImg = document.getElementById('album-art');
-    const artContainer = document.getElementById('art-container');
-    if (currentArtUrl) URL.revokeObjectURL(currentArtUrl);
-    jsmediatags.read(f, {
-        onSuccess: (tag) => {
-            const p = tag.tags.picture;
-            if (p) {
-                const blob = new Blob([new Uint8Array(p.data)], { type: p.format });
-                currentArtUrl = URL.createObjectURL(blob);
-                artImg.src = currentArtUrl;
-                artContainer.style.display = 'block';
-            } else { artContainer.style.display = 'none'; }
-        },
-        onError: () => artContainer.style.display = 'none'
-    });
-}
-
-function updateInfoDisplay() {
-    const item = playlist[currentIndex];
-    if (!item) return;
-    document.getElementById('file-name').textContent = item.displayName;
-    document.getElementById('artist-name').textContent = item.artist;
-    const badge = document.getElementById('format-badge');
-    badge.textContent = item.format;
-    badge.style.display = 'inline-block';
-    renderPlaylist();
-}
-
-player.ontimeupdate = () => {
-    if (player.duration) {
-        progressBar.style.width = `${(player.currentTime / player.duration) * 100}%`;
-        currentTimeDisp.textContent = formatTime(player.currentTime);
-        durationDisp.textContent = formatTime(player.duration);
-    }
-};
-
-progressContainer.onclick = (e) => {
-    if(player.duration) {
-        const rect = progressContainer.getBoundingClientRect();
-        player.currentTime = ((e.clientX - rect.left) / rect.width) * player.duration;
-    }
-};
-
-function nextTrack() {
-    if (repeatMode === 'one' && playlist.length > 0) playTrack(currentIndex);
-    else if (currentIndex < playlist.length - 1) playTrack(currentIndex + 1);
-    else if (repeatMode === 'all') playTrack(0);
-}
-
-function prevTrack() { if (currentIndex > 0) playTrack(currentIndex - 1); }
-
-function toggleRepeat() {
-    repeatBtn.classList.remove('rep-one', 'rep-all');
-    if (repeatMode === 'off') {
-        repeatMode = 'all';
-        repeatBtn.textContent = 'Rep: ALL';
-        repeatBtn.classList.add('rep-all');
-    } else if (repeatMode === 'all') {
-        repeatMode = 'one';
-        repeatBtn.textContent = 'Rep: ONE';
-        repeatBtn.classList.add('rep-one');
-    } else {
-        repeatMode = 'off';
-        repeatBtn.textContent = 'Rep: OFF';
-    }
-}
-
-player.onended = () => {
-    if (repeatMode === 'one') {
-        player.currentTime = 0;
-        player.play();
-    } else {
-        nextTrack();
-    }
-};
-
-playPauseBtn.onclick = () => { if(player.src) player.paused ? player.play() : player.pause(); };
-player.onplay = () => playPauseBtn.textContent = 'PAUSE';
-player.onpause = () => playPauseBtn.textContent = 'PLAY';
+// --- 3. CORE PLAYBACK FUNCTIONS ---
 
 function renderPlaylist() {
     playlistContainer.innerHTML = '';
-    playlist.forEach((item, i) => {
+    playlist.forEach((track, index) => {
         const div = document.createElement('div');
-        div.className = `playlist-item text-truncate ${i === currentIndex ? 'active' : ''}`;
-        div.textContent = `${i + 1}. ${item.displayName}`;
-        div.onclick = () => playTrack(i);
+        div.className = `playlist-item ${index === currentIndex ? 'active' : ''}`;
+        div.innerText = `${index + 1}. ${track.name}`;
+        div.onclick = () => playTrack(index);
         playlistContainer.appendChild(div);
     });
 }
 
-function formatTime(t) { const m = Math.floor(t/60), s = Math.floor(t%60); return `${m}:${s<10?'0'+s:s}`; }
-function shufflePlaylist() { if(playlist.length > 0) { playlist.sort(() => Math.random() - 0.5); playTrack(0); } }
-function clearPlaylist() { 
-    playlist = []; currentIndex = 0; player.pause(); player.src = ''; 
-    document.getElementById('file-name').textContent = "No track selected";
-    document.getElementById('artist-name').textContent = "";
-    document.getElementById('format-badge').style.display = 'none';
+function playTrack(index) {
+    if (!playlist[index]) return;
+    
+    currentIndex = index;
+    player.src = playlist[index].url;
+    
+    player.play().then(() => {
+        playPauseBtn.innerText = 'PAUSE';
+    }).catch(e => console.error("Playback error:", e));
+
+    document.getElementById('file-name').innerText = playlist[index].name;
+    renderPlaylist();
+    extractMetadata(playlist[index].file);
+}
+
+function extractMetadata(file) {
+    if (typeof jsmediatags === "undefined") return;
+
+    jsmediatags.read(file, {
+        onSuccess: function(tag) {
+            const t = tag.tags;
+            document.getElementById('artist-name').innerText = t.artist || "Unknown Artist";
+            
+            // Format Badge
+            const ext = file.name.split('.').pop().toUpperCase();
+            const badge = document.getElementById('format-badge');
+            badge.innerText = ext;
+            badge.style.display = 'inline-block';
+
+            // Album Art
+            const art = t.picture;
+            if (art) {
+                let base64String = "";
+                for (let i = 0; i < art.data.length; i++) base64String += String.fromCharCode(art.data[i]);
+                document.getElementById('album-art').src = `data:${art.format};base64,${window.btoa(base64String)}`;
+                document.getElementById('art-container').style.display = 'block';
+            } else {
+                document.getElementById('art-container').style.display = 'none';
+            }
+        },
+        onError: () => {
+            document.getElementById('artist-name').innerText = "Unknown Artist";
+            document.getElementById('art-container').style.display = 'none';
+        }
+    });
+}
+
+// --- 4. NAVIGATION (MODIFIED FOR REPEAT: ONE) ---
+
+function nextTrack() {
+    if (playlist.length === 0) return;
+    
+    if (repeatMode === 'ONE') {
+        // En mode REPEAT: ONE, Next rejoue le même titre
+        playTrack(currentIndex);
+    } else {
+        // Logique normale ou Shuffle
+        let idx = isShuffle ? Math.floor(Math.random() * playlist.length) : (currentIndex + 1) % playlist.length;
+        playTrack(idx);
+    }
+}
+
+function prevTrack() {
+    if (playlist.length === 0) return;
+
+    if (repeatMode === 'ONE') {
+        // En mode REPEAT: ONE, Back rejoue le même titre
+        playTrack(currentIndex);
+    } else {
+        // Titre précédent
+        let idx = (currentIndex - 1 + playlist.length) % playlist.length;
+        playTrack(idx);
+    }
+}
+
+// Handle automatic end of track
+player.onended = () => {
+    if (repeatMode === 'ONE') {
+        player.currentTime = 0;
+        player.play();
+    } else if (repeatMode === 'ALL' || currentIndex < playlist.length - 1) {
+        nextTrack();
+    } else {
+        playPauseBtn.innerText = 'PLAY';
+    }
+};
+
+// --- 5. UI CONTROLS & TOGGLES ---
+
+playPauseBtn.onclick = () => {
+    if (playlist.length === 0) return;
+    if (player.paused) {
+        player.play();
+        playPauseBtn.innerText = 'PAUSE';
+    } else {
+        player.pause();
+        playPauseBtn.innerText = 'PLAY';
+    }
+};
+
+function toggleShuffle() {
+    isShuffle = !isShuffle;
+    document.getElementById('shuffle-btn').classList.toggle('shuffle-active', isShuffle);
+}
+
+function toggleRepeat() {
+    const btn = document.getElementById('repeat-btn');
+    if (repeatMode === 'OFF') {
+        repeatMode = 'ONE';
+        btn.innerText = 'REPEAT: ONE';
+        btn.classList.add('rep-one');
+    } else if (repeatMode === 'ONE') {
+        repeatMode = 'ALL';
+        btn.innerText = 'REPEAT: ALL';
+        btn.classList.replace('rep-one', 'rep-all');
+    } else {
+        repeatMode = 'OFF';
+        btn.innerText = 'REPEAT: OFF';
+        btn.classList.remove('rep-all');
+    }
+}
+
+function toggleMute() {
+    player.muted = !player.muted;
+    const btn = document.getElementById('mute-btn');
+    btn.classList.toggle('mute-active', player.muted);
+    btn.innerText = player.muted ? 'Mute: ON' : 'Mute: OFF';
+}
+
+// --- 6. BARS & PROGRESS LOGIC ---
+
+player.ontimeupdate = () => {
+    if (player.duration) {
+        const pct = (player.currentTime / player.duration) * 100;
+        progressBar.style.width = pct + '%';
+        document.getElementById('current-time').innerText = formatTime(player.currentTime);
+        document.getElementById('duration').innerText = formatTime(player.duration);
+    }
+};
+
+progressContainer.onclick = (e) => {
+    if (!player.duration) return;
+    const rect = progressContainer.getBoundingClientRect();
+    const pct = (e.clientX - rect.left) / rect.width;
+    player.currentTime = pct * player.duration;
+};
+
+volumeContainer.onclick = (e) => {
+    const rect = volumeContainer.getBoundingClientRect();
+    const vol = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    player.volume = vol;
+    volumeBar.style.width = (vol * 100) + '%';
+    document.getElementById('volume-percent').innerText = Math.round(vol * 100) + '%';
+    localStorage.setItem('hifi-volume', vol);
+};
+
+// --- 7. UTILS ---
+
+function formatTime(s) {
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m}:${sec < 10 ? '0' : ''}${sec}`;
+}
+
+function clearPlaylist() {
+    playlist = [];
+    player.pause();
+    player.src = "";
+    renderPlaylist();
+    document.getElementById('file-name').innerText = 'No track selected';
+    document.getElementById('artist-name').innerText = '';
     document.getElementById('art-container').style.display = 'none';
-    renderPlaylist(); 
+    document.getElementById('format-badge').style.display = 'none';
 }

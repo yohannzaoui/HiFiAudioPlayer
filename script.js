@@ -1,8 +1,3 @@
-/**
- * HiFi Audio Player - Core Engine
- * Stable Base v4.0 [2026-01-11]
- */
-
 const player = document.getElementById('player');
 const playPauseBtn = document.getElementById('play-pause-btn');
 const progressBar = document.getElementById('progress-bar');
@@ -11,212 +6,143 @@ const volumeBar = document.getElementById('volume-bar');
 const volumeContainer = document.getElementById('volume-container');
 const playlistContainer = document.getElementById('playlist');
 const fileInput = document.getElementById('file-input');
+const canvas = document.getElementById('visualizer');
+const canvasCtx = canvas.getContext('2d');
 
+let audioCtx, source, analyzer, dataArray;
+let isVisualizerSetup = false;
+let isVisualizerEnabled = true;
 let playlist = [];
 let currentIndex = 0;
 let isShuffle = false;
-let repeatMode = 'OFF'; // Options: OFF, ONE, ALL
+let repeatMode = 'OFF';
 
-// --- 1. INITIALIZATION & STORAGE ---
+window.addEventListener('resize', resizeCanvas);
+function resizeCanvas() {
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
+}
+resizeCanvas();
 
-window.addEventListener('load', () => {
-    // Restore Volume from Preferences
-    const savedVol = localStorage.getItem('hifi-volume') || 0.05;
-    player.volume = savedVol;
-    volumeBar.style.width = (savedVol * 100) + '%';
-    document.getElementById('volume-percent').innerText = Math.round(savedVol * 100) + '%';
-});
-
-// --- 2. FILE HANDLING ---
-
-fileInput.addEventListener('change', (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
-
-    const isFirstLoad = playlist.length === 0;
-
-    files.forEach(file => {
-        playlist.push({
-            name: file.name.replace(/\.[^/.]+$/, ""),
-            url: URL.createObjectURL(file),
-            file: file
-        });
-    });
-
-    renderPlaylist();
-    if (isFirstLoad) playTrack(0);
-});
-
-// --- 3. CORE PLAYBACK FUNCTIONS ---
-
-function renderPlaylist() {
-    playlistContainer.innerHTML = '';
-    playlist.forEach((track, index) => {
-        const div = document.createElement('div');
-        div.className = `playlist-item ${index === currentIndex ? 'active' : ''}`;
-        div.innerText = `${index + 1}. ${track.name}`;
-        div.onclick = () => playTrack(index);
-        playlistContainer.appendChild(div);
-    });
+function setupVisualizer() {
+    if (isVisualizerSetup) return;
+    try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        source = audioCtx.createMediaElementSource(player);
+        analyzer = audioCtx.createAnalyser();
+        source.connect(analyzer);
+        analyzer.connect(audioCtx.destination);
+        analyzer.fftSize = 64; 
+        dataArray = new Uint8Array(analyzer.frequencyBinCount);
+        isVisualizerSetup = true;
+        draw();
+    } catch (e) { console.error("AudioContext error:", e); }
 }
 
-function playTrack(index) {
-    if (!playlist[index]) return;
-    
-    currentIndex = index;
-    player.src = playlist[index].url;
-    
-    player.play().then(() => {
-        playPauseBtn.innerText = 'PAUSE';
-    }).catch(e => console.error("Playback error:", e));
-
-    document.getElementById('file-name').innerText = playlist[index].name;
-    renderPlaylist();
-    extractMetadata(playlist[index].file);
+function draw() {
+    requestAnimationFrame(draw);
+    canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!isVisualizerEnabled || !isVisualizerSetup) return;
+    analyzer.getByteFrequencyData(dataArray);
+    const barWidth = (canvas.width / dataArray.length) - 2;
+    let x = 0;
+    for (let i = 0; i < dataArray.length; i++) {
+        let barHeight = (dataArray[i] / 255) * canvas.height;
+        canvasCtx.fillStyle = '#d4af37';
+        canvasCtx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+        x += barWidth + 2;
+    }
 }
 
 function extractMetadata(file) {
-    if (typeof jsmediatags === "undefined") return;
-
     jsmediatags.read(file, {
         onSuccess: function(tag) {
             const t = tag.tags;
             document.getElementById('artist-name').innerText = t.artist || "Unknown Artist";
-            
-            // Format Badge
-            const ext = file.name.split('.').pop().toUpperCase();
-            const badge = document.getElementById('format-badge');
-            badge.innerText = ext;
-            badge.style.display = 'inline-block';
-
-            // Album Art
-            const art = t.picture;
-            if (art) {
+            document.getElementById('format-badge').innerText = file.name.split('.').pop();
+            document.getElementById('format-badge').style.display = 'inline-block';
+            if (t.picture) {
+                const { data, format } = t.picture;
                 let base64String = "";
-                for (let i = 0; i < art.data.length; i++) base64String += String.fromCharCode(art.data[i]);
-                document.getElementById('album-art').src = `data:${art.format};base64,${window.btoa(base64String)}`;
+                for (let i = 0; i < data.length; i++) base64String += String.fromCharCode(data[i]);
+                document.getElementById('album-art').src = `data:${format};base64,${window.btoa(base64String)}`;
                 document.getElementById('art-container').style.display = 'block';
-            } else {
-                document.getElementById('art-container').style.display = 'none';
-            }
+            } else { document.getElementById('art-container').style.display = 'none'; }
         },
-        onError: () => {
-            document.getElementById('artist-name').innerText = "Unknown Artist";
+        onError: function() {
+            document.getElementById('artist-name').innerText = "";
             document.getElementById('art-container').style.display = 'none';
         }
     });
 }
 
-// --- 4. NAVIGATION (MODIFIED FOR REPEAT: ONE) ---
+fileInput.addEventListener('change', (e) => {
+    const files = Array.from(e.target.files);
+    const wasEmpty = (playlist.length === 0);
+    files.forEach(f => playlist.push({ name: f.name.replace(/\.[^/.]+$/, ""), url: URL.createObjectURL(f), file: f }));
+    renderPlaylist();
+    if (wasEmpty && playlist.length > 0) playTrack(0);
+});
+
+function renderPlaylist() {
+    playlistContainer.innerHTML = '';
+    playlist.forEach((t, i) => {
+        const div = document.createElement('div');
+        div.className = `playlist-item ${i === currentIndex ? 'active' : ''}`;
+        div.innerText = `${i + 1}. ${t.name}`;
+        div.onclick = () => playTrack(i);
+        playlistContainer.appendChild(div);
+    });
+}
+
+function playTrack(idx) {
+    if (!playlist[idx]) return;
+    if (!isVisualizerSetup) setupVisualizer();
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    currentIndex = idx;
+    player.src = playlist[idx].url;
+    player.play();
+    playPauseBtn.innerText = 'PAUSE';
+    document.getElementById('file-name').innerText = playlist[idx].name;
+    extractMetadata(playlist[idx].file);
+    renderPlaylist();
+}
+
+playPauseBtn.onclick = () => {
+    if (!player.src && playlist.length > 0) { playTrack(0); return; }
+    if (!player.src) return;
+    if (!isVisualizerSetup) setupVisualizer();
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    player.paused ? (player.play(), playPauseBtn.innerText = 'PAUSE') : (player.pause(), playPauseBtn.innerText = 'PLAY');
+};
 
 function nextTrack() {
     if (playlist.length === 0) return;
-    
-    if (repeatMode === 'ONE') {
-        // En mode REPEAT: ONE, Next rejoue le même titre
-        playTrack(currentIndex);
-    } else {
-        // Logique normale ou Shuffle
-        let idx = isShuffle ? Math.floor(Math.random() * playlist.length) : (currentIndex + 1) % playlist.length;
-        playTrack(idx);
+    if (repeatMode === 'ONE') playTrack(currentIndex);
+    else {
+        let next = (currentIndex + 1) % playlist.length;
+        if (isShuffle) next = Math.floor(Math.random() * playlist.length);
+        playTrack(next);
     }
 }
 
 function prevTrack() {
     if (playlist.length === 0) return;
-
-    if (repeatMode === 'ONE') {
-        // En mode REPEAT: ONE, Back rejoue le même titre
-        playTrack(currentIndex);
-    } else {
-        // Titre précédent
-        let idx = (currentIndex - 1 + playlist.length) % playlist.length;
-        playTrack(idx);
-    }
+    if (repeatMode === 'ONE') playTrack(currentIndex);
+    else playTrack((currentIndex - 1 + playlist.length) % playlist.length);
 }
 
-// Handle automatic end of track
 player.onended = () => {
-    if (repeatMode === 'ONE') {
-        player.currentTime = 0;
-        player.play();
-    } else if (repeatMode === 'ALL' || currentIndex < playlist.length - 1) {
-        nextTrack();
-    } else {
-        playPauseBtn.innerText = 'PLAY';
-    }
+    if (repeatMode === 'ONE') playTrack(currentIndex);
+    else nextTrack();
 };
-
-// --- 5. UI CONTROLS & TOGGLES ---
-
-playPauseBtn.onclick = () => {
-    if (playlist.length === 0) return;
-    if (player.paused) {
-        player.play();
-        playPauseBtn.innerText = 'PAUSE';
-    } else {
-        player.pause();
-        playPauseBtn.innerText = 'PLAY';
-    }
-};
-
-function toggleShuffle() {
-    isShuffle = !isShuffle;
-    document.getElementById('shuffle-btn').classList.toggle('shuffle-active', isShuffle);
-}
-
-function toggleRepeat() {
-    const btn = document.getElementById('repeat-btn');
-    if (repeatMode === 'OFF') {
-        repeatMode = 'ONE';
-        btn.innerText = 'REPEAT: ONE';
-        btn.classList.add('rep-one');
-    } else if (repeatMode === 'ONE') {
-        repeatMode = 'ALL';
-        btn.innerText = 'REPEAT: ALL';
-        btn.classList.replace('rep-one', 'rep-all');
-    } else {
-        repeatMode = 'OFF';
-        btn.innerText = 'REPEAT: OFF';
-        btn.classList.remove('rep-all');
-    }
-}
-
-function toggleMute() {
-    player.muted = !player.muted;
-    const btn = document.getElementById('mute-btn');
-    btn.classList.toggle('mute-active', player.muted);
-    btn.innerText = player.muted ? 'Mute: ON' : 'Mute: OFF';
-}
-
-// --- 6. BARS & PROGRESS LOGIC ---
 
 player.ontimeupdate = () => {
-    if (player.duration) {
-        const pct = (player.currentTime / player.duration) * 100;
-        progressBar.style.width = pct + '%';
-        document.getElementById('current-time').innerText = formatTime(player.currentTime);
-        document.getElementById('duration').innerText = formatTime(player.duration);
-    }
-};
-
-progressContainer.onclick = (e) => {
     if (!player.duration) return;
-    const rect = progressContainer.getBoundingClientRect();
-    const pct = (e.clientX - rect.left) / rect.width;
-    player.currentTime = pct * player.duration;
+    progressBar.style.width = (player.currentTime / player.duration) * 100 + '%';
+    document.getElementById('current-time').innerText = formatTime(player.currentTime);
+    document.getElementById('duration').innerText = formatTime(player.duration);
 };
-
-volumeContainer.onclick = (e) => {
-    const rect = volumeContainer.getBoundingClientRect();
-    const vol = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    player.volume = vol;
-    volumeBar.style.width = (vol * 100) + '%';
-    document.getElementById('volume-percent').innerText = Math.round(vol * 100) + '%';
-    localStorage.setItem('hifi-volume', vol);
-};
-
-// --- 7. UTILS ---
 
 function formatTime(s) {
     const m = Math.floor(s / 60);
@@ -224,13 +150,50 @@ function formatTime(s) {
     return `${m}:${sec < 10 ? '0' : ''}${sec}`;
 }
 
-function clearPlaylist() {
-    playlist = [];
-    player.pause();
-    player.src = "";
-    renderPlaylist();
-    document.getElementById('file-name').innerText = 'No track selected';
-    document.getElementById('artist-name').innerText = '';
-    document.getElementById('art-container').style.display = 'none';
-    document.getElementById('format-badge').style.display = 'none';
+progressContainer.onclick = (e) => {
+    player.currentTime = ((e.clientX - progressContainer.getBoundingClientRect().left) / progressContainer.offsetWidth) * player.duration;
+};
+
+volumeContainer.onclick = (e) => {
+    let vol = (e.clientX - volumeContainer.getBoundingClientRect().left) / volumeContainer.offsetWidth;
+    player.volume = Math.max(0, Math.min(1, vol));
+    volumeBar.style.width = (player.volume * 100) + '%';
+    document.getElementById('volume-percent').innerText = Math.round(player.volume * 100) + '%';
+};
+
+function toggleVisualizer() {
+    isVisualizerEnabled = !isVisualizerEnabled;
+    const btn = document.getElementById('vu-toggle-btn');
+    btn.classList.toggle('vu-active', isVisualizerEnabled);
+    btn.innerText = isVisualizerEnabled ? "VU: ON" : "VU: OFF";
+}
+
+function toggleShuffle() {
+    isShuffle = !isShuffle;
+    const btn = document.getElementById('shuffle-btn');
+    btn.classList.toggle('shuffle-active', isShuffle);
+    btn.innerText = isShuffle ? "SHUFFLE: ON" : "SHUFFLE: OFF";
+}
+
+function toggleRepeat() {
+    const btn = document.getElementById('repeat-btn');
+    btn.classList.remove('rep-one', 'rep-all');
+    if (repeatMode === 'OFF') { repeatMode = 'ONE'; btn.innerText = "REPEAT: ONE"; btn.classList.add('rep-one'); }
+    else if (repeatMode === 'ONE') { repeatMode = 'ALL'; btn.innerText = "REPEAT: ALL"; btn.classList.add('rep-all'); }
+    else { repeatMode = 'OFF'; btn.innerText = "REPEAT: OFF"; }
+}
+
+function toggleMute() {
+    player.muted = !player.muted;
+    const btn = document.getElementById('mute-btn');
+    btn.classList.toggle('mute-active', player.muted);
+    btn.innerText = player.muted ? "MUTE: ON" : "MUTE: OFF";
+}
+
+function clearPlaylist() { 
+    playlist = []; player.pause(); player.src = ""; renderPlaylist(); 
+    document.getElementById('file-name').innerText = "No track selected";
+    document.getElementById('art-container').style.display = "none";
+    document.getElementById('artist-name').innerText = "";
+    document.getElementById('format-badge').style.display = "none";
 }

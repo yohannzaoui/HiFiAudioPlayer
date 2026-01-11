@@ -16,50 +16,49 @@ let repeatMode = 'OFF';
 let pointA = null, pointB = null, isABLooping = false;
 let peaks = [];
 
+// --- INITIALIZATION & PREFERENCES ---
+window.onload = () => {
+    const savedVolume = localStorage.getItem('hifi-volume');
+    if (savedVolume !== null) {
+        player.volume = savedVolume;
+        updateVolumeUI(savedVolume);
+    } else {
+        player.volume = 0.05; // Default 5%
+        updateVolumeUI(0.05);
+    }
+};
+
+function updateVolumeUI(vol) {
+    volumeBar.style.width = (vol * 100) + '%';
+    document.getElementById('volume-percent').innerText = Math.round(vol * 100) + '%';
+}
+
+// --- NAVIGATION LOGIC ---
 function nextTrack() {
     if (playlist.length === 0) return;
-    
-    // Logique REPEAT: ONE (Relit le fichier actuel)
-    if (repeatMode === 'ONE') {
-        playTrack(currentIndex);
-        return;
-    }
-
+    if (repeatMode === 'ONE') { playTrack(currentIndex); return; }
     if (isShuffle && playlist.length > 1) {
         let newIndex;
-        do {
-            newIndex = Math.floor(Math.random() * playlist.length);
-        } while (newIndex === currentIndex);
+        do { newIndex = Math.floor(Math.random() * playlist.length); } while (newIndex === currentIndex);
         currentIndex = newIndex;
-    } else {
-        currentIndex = (currentIndex + 1) % playlist.length;
-    }
+    } else { currentIndex = (currentIndex + 1) % playlist.length; }
     playTrack(currentIndex);
 }
 
 function prevTrack() {
     if (playlist.length === 0) return;
-
-    // Logique REPEAT: ONE (Relit le fichier actuel)
-    if (repeatMode === 'ONE') {
-        playTrack(currentIndex);
-        return;
-    }
-
+    if (repeatMode === 'ONE') { playTrack(currentIndex); return; }
     currentIndex = (currentIndex - 1 + playlist.length) % playlist.length;
     playTrack(currentIndex);
 }
 
 player.onended = () => {
-    if (repeatMode === 'ONE') {
-        playTrack(currentIndex);
-    } else if (repeatMode === 'ALL' || currentIndex < playlist.length - 1 || isShuffle) {
-        nextTrack();
-    } else {
-        playPauseBtn.innerText = 'PLAY';
-    }
+    if (repeatMode === 'ONE') playTrack(currentIndex);
+    else if (repeatMode === 'ALL' || currentIndex < playlist.length - 1 || isShuffle) nextTrack();
+    else playPauseBtn.innerText = 'PLAY';
 };
 
+// --- CORE FUNCTIONS ---
 function setupVisualizer() {
     if (isVisualizerSetup) return;
     try {
@@ -100,7 +99,6 @@ function extractMetadata(file) {
     const ext = file.name.split('.').pop().toUpperCase();
     document.getElementById('format-badge').innerText = ext;
     document.getElementById('format-badge').style.display = 'inline-block';
-
     jsmediatags.read(file, {
         onSuccess: function(tag) {
             const t = tag.tags;
@@ -110,7 +108,6 @@ function extractMetadata(file) {
                 document.getElementById('album-title-text').innerText = t.album;
                 albumDiv.style.display = 'block';
             } else albumDiv.style.display = 'none';
-
             if (t.picture) {
                 const { data, format } = t.picture;
                 let base = "";
@@ -176,13 +173,9 @@ function toggleShuffle() {
 function toggleRepeat() {
     const btn = document.getElementById('repeat-btn');
     btn.classList.remove('rep-one', 'rep-all');
-    if (repeatMode === 'OFF') {
-        repeatMode = 'ONE'; btn.innerText = "REPEAT: ONE"; btn.classList.add('rep-one');
-    } else if (repeatMode === 'ONE') {
-        repeatMode = 'ALL'; btn.innerText = "REPEAT: ALL"; btn.classList.add('rep-all');
-    } else {
-        repeatMode = 'OFF'; btn.innerText = "REPEAT: OFF";
-    }
+    if (repeatMode === 'OFF') { repeatMode = 'ONE'; btn.innerText = "REPEAT: ONE"; btn.classList.add('rep-one'); }
+    else if (repeatMode === 'ONE') { repeatMode = 'ALL'; btn.innerText = "REPEAT: ALL"; btn.classList.add('rep-all'); }
+    else { repeatMode = 'OFF'; btn.innerText = "REPEAT: OFF"; }
 }
 
 function toggleMute() {
@@ -227,9 +220,10 @@ document.getElementById('progress-container').onclick = (e) => {
 
 document.getElementById('volume-container').onclick = (e) => {
     let vol = (e.clientX - e.currentTarget.getBoundingClientRect().left) / e.currentTarget.offsetWidth;
-    player.volume = Math.max(0, Math.min(1, vol));
-    volumeBar.style.width = (player.volume * 100) + '%';
-    document.getElementById('volume-percent').innerText = Math.round(player.volume * 100) + '%';
+    vol = Math.max(0, Math.min(1, vol));
+    player.volume = vol;
+    updateVolumeUI(vol);
+    localStorage.setItem('hifi-volume', vol); // Auto-save volume
 };
 
 function clearPlaylist() { 

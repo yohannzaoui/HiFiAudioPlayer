@@ -1,5 +1,3 @@
----
-
 # HiFi Audio Player 🎧
 
 A sleek, high-fidelity web-based audio station designed for desktop enthusiasts. This application offers a premium dark-themed interface with a golden "HiFi" aesthetic, professional-grade controls, and full PWA (Progressive Web App) support for a native desktop experience.
@@ -7,12 +5,13 @@ A sleek, high-fidelity web-based audio station designed for desktop enthusiasts.
 ## ✨ Key Features
 
 * **Premium HiFi UI**: A sophisticated dark mode interface featuring a golden radial glow (halo effect) and a minimalist, scannable layout.
+* **Ergonomic Navigation**: Centralized controls with **BACK** and **NEXT** circular buttons framing the main **PLAY** button for an intuitive user experience.
 * **High-Resolution Audio Support**: Designed to handle high-quality formats like **FLAC**, **WAV**, and **MP3**.
 * **PWA Ready**: Can be installed as a standalone application on **Windows, macOS, and Linux**.
 * **Smart Metadata**: Automatically extracts song titles, artist names, and album artwork using `jsmediatags`.
 * **Persistent Settings**: Your volume preferences are automatically saved to your browser's local storage.
 * **Desktop-Optimized**: Custom-built for large screens with a dedicated blocker for mobile devices to ensure the best UX.
-* **Apple Compatibility**: Fully optimized for Safari with specific meta-tags for a "Web Clip" experience.
+* **Apple Compatibility**: Fully optimized for Safari with specific meta-tags for a "Web Clip" experience and high-quality font rendering.
 
 ## 🛠️ Technical Stack
 
@@ -26,34 +25,35 @@ A sleek, high-fidelity web-based audio station designed for desktop enthusiasts.
 ```text
 ├── index.html          # Main application structure
 ├── style.css           # Styling with Golden Halo & Dark Mode
-├── script.js          # Audio engine & Playlist logic
+├── script.js           # Audio engine & Playlist logic
 ├── manifest.json       # Desktop installation configuration
 ├── sw.js               # Service Worker for offline/PWA support
 └── img/
-    └── favicon.png     # Custom application icon
+    └── favicon.png     # Custom application icon (HiFi styled)
 
 ```
 
 ## 🚀 Installation & Setup
 
 1. **Clone or Download**: Save all files into a single directory.
-2. **Hosting**: Since this is a PWA, it requires a local server or web hosting to enable the "Install" button.
+2. **Hosting**: Since this is a PWA, it requires a local server or web hosting (HTTPS) to enable the "Install" button.
 * *Option A (Local)*: Use the **Live Server** extension in VS Code.
 * *Option B (Online)*: Upload to GitHub Pages, Vercel, or Netlify.
 
 
 3. **Install as App**:
-* Open the app in Chrome or Edge.
-* Click the **Install Icon** in the address bar.
-* The HiFi Player will now appear in your Start Menu / Applications folder.
+* Open the app in Chrome, Edge or Safari.
+* Click the **Install Icon** in the address bar (Desktop) or "Add to Home Screen" (Mac Dock).
+* The HiFi Player will now appear as a native application.
 
 
 
 ## 🎵 How to Use
 
-1. Click **ADD FILES** to import your music collection.
-2. Use the **Shuffle** and **Repeat** buttons to customize your listening experience.
-3. Adjust the volume via the custom slider (your level will be remembered for the next session).
-4. Manage your queue using the **Clear** button to reset the playlist.
+1. **Add Music**: Click **ADD FILES** to import your music collection (FLAC, WAV, MP3).
+2. **Control**: Use the central navigation (**BACK**, **PLAY**, **NEXT**) to control your music flow.
+3. **Options**: Use the **Shuffle**, **Repeat**, and **Mute** buttons at the bottom to customize your listening experience.
+4. **Volume**: Adjust the volume via the custom slider. Your level is remembered even after closing the browser.
+5. **Queue**: Manage your playlist using the **Clear** button (red text on dark background) to reset the current queue.
 
 ---

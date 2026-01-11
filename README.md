@@ -57,5 +57,3 @@ A sleek, high-fidelity web-based audio station designed for desktop enthusiasts.
 4. Manage your queue using the **Clear** button to reset the playlist.
 
 ---
-
-*Designed for the audiophile. Built for the web.*

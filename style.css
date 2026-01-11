@@ -43,9 +43,7 @@ body {
     margin-bottom: 20px; border-bottom: 1px solid #222; padding-bottom: 15px; width: 100%;
 }
 
-.section-header, .time-display span, .volume-label, #volume-percent {
-    font-size: 10px; text-transform: uppercase; letter-spacing: 2px; font-weight: 800; color: var(--text-dim) !important;
-}
+.section-header { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; font-weight: 800; color: var(--text-dim); }
 
 .player-main-content { 
     text-align: center; width: 100%; 
@@ -54,7 +52,7 @@ body {
 
 .visualizer-container { 
     width: 100%; height: 60px; margin-bottom: 15px; 
-    background: var(--bg-card); border-radius: 8px;
+    background: var(--bg-card); /* Invisible back */
 }
 #visualizer { width: 100%; height: 100%; display: block; }
 
@@ -76,37 +74,20 @@ body {
     font-size: 9px; padding: 2px 10px; border-radius: 4px; font-weight: 800; text-transform: uppercase;
 }
 
-.progress-container { 
-    width: 100%; background: #000; height: 6px; border-radius: 10px; 
-    cursor: pointer; margin: 18px 0; position: relative; overflow: hidden;
-}
+.progress-container { width: 100%; background: #000; height: 6px; border-radius: 10px; cursor: pointer; margin: 18px 0; position: relative; overflow: hidden; }
 .progress-bar { height: 100%; background: var(--accent); position: absolute; }
 
 .main-actions { display: flex; align-items: center; justify-content: center; gap: 30px; margin-bottom: 25px; }
-
-.play-pause-btn { 
-    background: transparent; border: 1px solid var(--accent); color: var(--accent); 
-    width: 140px; height: 44px; border-radius: 30px; font-weight: 800; cursor: pointer;
-    transition: all 0.2s ease;
-}
+.play-pause-btn { background: transparent; border: 1px solid var(--accent); color: var(--accent); width: 140px; height: 44px; border-radius: 30px; font-weight: 800; cursor: pointer; transition: 0.2s; }
 .play-pause-btn:hover { background: rgba(212, 175, 55, 0.1); transform: scale(1.05); }
+.nav-btn-alt { background: #1f1f1f; color: var(--text-dim); width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer; transition: 0.2s; }
 
-.nav-btn-alt { 
-    background: #1f1f1f; color: var(--text-dim); width: 40px; height: 40px; 
-    border-radius: 50%; border: none; cursor: pointer; transition: all 0.2s ease;
-}
-
-.volume-container { 
-    width: 100%; background: #000; height: 6px; border-radius: 10px; 
-    cursor: pointer; margin-top: 8px; position: relative; overflow: hidden;
-}
+.volume-container { width: 100%; background: #000; height: 6px; border-radius: 10px; cursor: pointer; margin-top: 8px; position: relative; overflow: hidden; }
 .volume-bar { height: 100%; background: var(--accent); position: absolute; }
+.volume-label, #volume-percent, .time-display span { font-size: 10px; font-weight: 800; color: var(--text-dim); letter-spacing: 1px; }
 
 .nav-controls { display: flex; gap: 8px; width: 100%; }
-.nav-btn { 
-    background: #1f1f1f; color: var(--text-dim); flex: 1; height: 34px; border-radius: 8px; 
-    font-size: 8px; font-weight: 800; border: 1px solid transparent; cursor: pointer;
-}
+.nav-btn { background: #1f1f1f; color: var(--text-dim); flex: 1; height: 34px; border-radius: 8px; font-size: 8px; font-weight: 800; border: 1px solid transparent; cursor: pointer; }
 
 .vu-active, .shuffle-active { color: var(--accent) !important; border-color: rgba(212, 175, 55, 0.4) !important; }
 .mute-active { color: var(--danger) !important; border-color: rgba(255, 68, 68, 0.4) !important; }
@@ -121,5 +102,4 @@ body {
 .clear-btn { background: #1f1f1f; color: var(--danger); border: none; padding: 6px 12px; border-radius: 6px; font-size: 10px; font-weight: 800; cursor: pointer; }
 
 ::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: #121212; }
 ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }

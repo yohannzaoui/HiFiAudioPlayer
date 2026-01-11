@@ -1,3 +1,8 @@
+/**
+ * HiFi Audio Player - Core Logic
+ * Features: Metadata extraction, VU-meter, A-B Loop, Auto-save preferences
+ */
+
 const player = document.getElementById('player');
 const playPauseBtn = document.getElementById('play-pause-btn');
 const progressBar = document.getElementById('progress-bar');
@@ -16,13 +21,15 @@ let repeatMode = 'OFF';
 let pointA = null, pointB = null, isABLooping = false;
 let peaks = [];
 
+// --- INITIALIZATION & PREFERENCES ---
 window.onload = () => {
+    // Load saved volume from localStorage
     const savedVolume = localStorage.getItem('hifi-volume');
     if (savedVolume !== null) {
-        player.volume = savedVolume;
-        updateVolumeUI(savedVolume);
+        player.volume = parseFloat(savedVolume);
+        updateVolumeUI(player.volume);
     } else {
-        player.volume = 0.05;
+        player.volume = 0.05; // Default 5%
         updateVolumeUI(0.05);
     }
 };
@@ -32,30 +39,51 @@ function updateVolumeUI(vol) {
     document.getElementById('volume-percent').innerText = Math.round(vol * 100) + '%';
 }
 
+// --- NAVIGATION LOGIC ---
 function nextTrack() {
     if (playlist.length === 0) return;
-    if (repeatMode === 'ONE') { playTrack(currentIndex); return; }
+    
+    // REPEAT ONE Logic: Restart same track even on manual Next
+    if (repeatMode === 'ONE') { 
+        playTrack(currentIndex); 
+        return; 
+    }
+
     if (isShuffle && playlist.length > 1) {
         let newIndex;
-        do { newIndex = Math.floor(Math.random() * playlist.length); } while (newIndex === currentIndex);
+        do { newIndex = Math.floor(Math.random() * playlist.length); } 
+        while (newIndex === currentIndex);
         currentIndex = newIndex;
-    } else { currentIndex = (currentIndex + 1) % playlist.length; }
+    } else {
+        currentIndex = (currentIndex + 1) % playlist.length;
+    }
     playTrack(currentIndex);
 }
 
 function prevTrack() {
     if (playlist.length === 0) return;
-    if (repeatMode === 'ONE') { playTrack(currentIndex); return; }
+    
+    // REPEAT ONE Logic: Restart same track even on manual Back
+    if (repeatMode === 'ONE') { 
+        playTrack(currentIndex); 
+        return; 
+    }
+
     currentIndex = (currentIndex - 1 + playlist.length) % playlist.length;
     playTrack(currentIndex);
 }
 
 player.onended = () => {
-    if (repeatMode === 'ONE') playTrack(currentIndex);
-    else if (repeatMode === 'ALL' || currentIndex < playlist.length - 1 || isShuffle) nextTrack();
-    else playPauseBtn.innerText = 'PLAY';
+    if (repeatMode === 'ONE') {
+        playTrack(currentIndex);
+    } else if (repeatMode === 'ALL' || currentIndex < playlist.length - 1 || isShuffle) {
+        nextTrack();
+    } else {
+        playPauseBtn.innerText = 'PLAY';
+    }
 };
 
+// --- VISUALIZER (VU-METER) ---
 function setupVisualizer() {
     if (isVisualizerSetup) return;
     try {
@@ -67,58 +95,90 @@ function setupVisualizer() {
         analyzer.fftSize = 64;
         dataArray = new Uint8Array(analyzer.frequencyBinCount);
         isVisualizerSetup = true;
+        
         canvas.width = canvas.clientWidth;
         canvas.height = canvas.clientHeight;
         draw();
-    } catch (e) { console.log("AudioContext blocked"); }
+    } catch (e) {
+        console.log("AudioContext blocked or already running");
+    }
 }
 
 function draw() {
     requestAnimationFrame(draw);
     canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+    
     if (!isVisualizerEnabled || !isVisualizerSetup) return;
+    
     analyzer.getByteFrequencyData(dataArray);
     const barWidth = canvas.width / dataArray.length;
+    
     for (let i = 0; i < dataArray.length; i++) {
         let barHeight = (dataArray[i] / 255) * canvas.height;
+        
+        // Peak logic
         if (!peaks[i] || barHeight > peaks[i]) peaks[i] = barHeight;
         else peaks[i] -= 1.5;
+
         const grad = canvasCtx.createLinearGradient(0, canvas.height, 0, 0);
-        grad.addColorStop(0, '#8a6d1d'); grad.addColorStop(1, '#d4af37');
+        grad.addColorStop(0, '#8a6d1d');
+        grad.addColorStop(1, '#d4af37');
+        
         canvasCtx.fillStyle = grad;
         canvasCtx.fillRect(i * barWidth, canvas.height - barHeight, barWidth - 2, barHeight);
+        
+        // Peak line
         canvasCtx.fillStyle = '#ff6600';
         canvasCtx.fillRect(i * barWidth, canvas.height - peaks[i] - 2, barWidth - 2, 2);
     }
 }
 
+// --- METADATA & FILES ---
 function extractMetadata(file) {
     const ext = file.name.split('.').pop().toUpperCase();
-    document.getElementById('format-badge').innerText = ext;
-    document.getElementById('format-badge').style.display = 'inline-block';
+    const badge = document.getElementById('format-badge');
+    badge.innerText = ext;
+    badge.style.display = 'inline-block';
+
     jsmediatags.read(file, {
         onSuccess: function(tag) {
             const t = tag.tags;
             document.getElementById('artist-name').innerText = t.artist || "Unknown Artist";
+            
             const albumDiv = document.getElementById('album-info-display');
             if (t.album) {
                 document.getElementById('album-title-text').innerText = t.album;
                 albumDiv.style.display = 'block';
-            } else albumDiv.style.display = 'none';
+            } else {
+                albumDiv.style.display = 'none';
+            }
+
             if (t.picture) {
                 const { data, format } = t.picture;
                 let base = "";
                 for (let i = 0; i < data.length; i++) base += String.fromCharCode(data[i]);
                 document.getElementById('album-art').src = `data:${format};base64,${window.btoa(base)}`;
                 document.getElementById('art-container').style.display = 'block';
-            } else document.getElementById('art-container').style.display = 'none';
+            } else {
+                document.getElementById('art-container').style.display = 'none';
+            }
+        },
+        onError: function(error) {
+            console.log('Error reading tags: ', error.type, error.info);
+            document.getElementById('art-container').style.display = 'none';
         }
     });
 }
 
 document.getElementById('file-input').addEventListener('change', (e) => {
     const files = Array.from(e.target.files);
-    files.forEach(f => playlist.push({ name: f.name.replace(/\.[^/.]+$/, ""), url: URL.createObjectURL(f), file: f }));
+    files.forEach(f => {
+        playlist.push({ 
+            name: f.name.replace(/\.[^/.]+$/, ""), 
+            url: URL.createObjectURL(f), 
+            file: f 
+        });
+    });
     renderPlaylist();
     if (player.paused && !player.src && playlist.length > 0) playTrack(0);
 });
@@ -147,6 +207,7 @@ function playTrack(idx) {
     resetAB();
 }
 
+// --- PLAYER CONTROLS ---
 playPauseBtn.onclick = () => {
     if (!player.src && playlist.length > 0) playTrack(0);
     else player.paused ? (player.play(), playPauseBtn.innerText = 'PAUSE') : (player.pause(), playPauseBtn.innerText = 'PLAY');
@@ -154,12 +215,19 @@ playPauseBtn.onclick = () => {
 
 player.ontimeupdate = () => {
     if (!player.duration) return;
-    if (isABLooping && player.currentTime >= pointB) player.currentTime = pointA;
-    progressBar.style.width = (player.currentTime / player.duration) * 100 + '%';
+    
+    // A-B Loop Logic
+    if (isABLooping && player.currentTime >= pointB) {
+        player.currentTime = pointA;
+    }
+
+    const percent = (player.currentTime / player.duration) * 100;
+    progressBar.style.width = percent + '%';
     document.getElementById('current-time').innerText = formatTime(player.currentTime);
     document.getElementById('duration').innerText = formatTime(player.duration);
 };
 
+// --- BUTTON TOGGLES ---
 function toggleShuffle() {
     isShuffle = !isShuffle;
     const btn = document.getElementById('shuffle-btn');
@@ -170,9 +238,20 @@ function toggleShuffle() {
 function toggleRepeat() {
     const btn = document.getElementById('repeat-btn');
     btn.classList.remove('rep-one', 'rep-all');
-    if (repeatMode === 'OFF') { repeatMode = 'ONE'; btn.innerText = "REPEAT: ONE"; btn.classList.add('rep-one'); }
-    else if (repeatMode === 'ONE') { repeatMode = 'ALL'; btn.innerText = "REPEAT: ALL"; btn.classList.add('rep-all'); }
-    else { repeatMode = 'OFF'; btn.innerText = "REPEAT: OFF"; }
+    if (repeatMode === 'OFF') { 
+        repeatMode = 'ONE'; 
+        btn.innerText = "REPEAT: ONE"; 
+        btn.classList.add('rep-one'); 
+    }
+    else if (repeatMode === 'ONE') { 
+        repeatMode = 'ALL'; 
+        btn.innerText = "REPEAT: ALL"; 
+        btn.classList.add('rep-all'); 
+    }
+    else { 
+        repeatMode = 'OFF'; 
+        btn.innerText = "REPEAT: OFF"; 
+    }
 }
 
 function toggleMute() {
@@ -189,6 +268,7 @@ function toggleVisualizer() {
     btn.classList.toggle('vu-active', isVisualizerEnabled);
 }
 
+// --- A-B LOOP SYSTEM ---
 function toggleABLoop() {
     const btn = document.getElementById('ab-loop-btn');
     if (pointA === null) {
@@ -200,33 +280,66 @@ function toggleABLoop() {
         if (pointB <= pointA) { pointB = null; return; }
         isABLooping = true;
         btn.innerText = "A-B: ON";
-    } else resetAB();
+    } else {
+        resetAB();
+    }
 }
 
 function resetAB() {
     pointA = null; pointB = null; isABLooping = false;
     const btn = document.getElementById('ab-loop-btn');
-    btn.innerText = "A-B: OFF"; btn.classList.remove('ab-active');
+    btn.innerText = "A-B: OFF"; 
+    btn.classList.remove('ab-active');
 }
 
-function formatTime(s) { const m = Math.floor(s / 60); const sec = Math.floor(s % 60); return `${m}:${sec < 10 ? '0' : ''}${sec}`; }
+// --- UTILITIES ---
+function formatTime(s) { 
+    const m = Math.floor(s / 60); 
+    const sec = Math.floor(s % 60); 
+    return `${m}:${sec < 10 ? '0' : ''}${sec}`; 
+}
 
 document.getElementById('progress-container').onclick = (e) => {
-    player.currentTime = ((e.clientX - e.currentTarget.getBoundingClientRect().left) / e.currentTarget.offsetWidth) * player.duration;
+    if (!player.duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pos = (e.clientX - rect.left) / rect.width;
+    player.currentTime = pos * player.duration;
 };
 
 document.getElementById('volume-container').onclick = (e) => {
-    let vol = (e.clientX - e.currentTarget.getBoundingClientRect().left) / e.currentTarget.offsetWidth;
+    const rect = e.currentTarget.getBoundingClientRect();
+    let vol = (e.clientX - rect.left) / rect.width;
     vol = Math.max(0, Math.min(1, vol));
     player.volume = vol;
     updateVolumeUI(vol);
-    localStorage.setItem('hifi-volume', vol);
+    localStorage.setItem('hifi-volume', vol); // Save preference
 };
 
+/**
+ * FIXED CLEAR FUNCTION
+ * Fully resets UI and Audio state
+ */
 function clearPlaylist() { 
-    playlist = []; player.pause(); player.src = ""; renderPlaylist(); 
+    playlist = []; 
+    player.pause(); 
+    player.src = ""; 
+    currentIndex = 0;
+    renderPlaylist(); 
+
+    // Reset Texts
     document.getElementById('file-name').innerText = "No track selected";
     document.getElementById('artist-name').innerText = "";
+    document.getElementById('current-time').innerText = "0:00";
+    document.getElementById('duration').innerText = "0:00";
+    document.getElementById('progress-bar').style.width = "0%";
+    playPauseBtn.innerText = "PLAY";
+
+    // Reset Visuals
+    document.getElementById('art-container').style.display = 'none';
+    document.getElementById('album-art').src = "";
     document.getElementById('album-info-display').style.display = 'none';
     document.getElementById('format-badge').style.display = 'none';
+    
+    resetAB();
+    console.log("HiFi Player: Reset complete.");
 }

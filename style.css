@@ -10,10 +10,15 @@
     --font-main: 'Inter', sans-serif;
 }
 
-* { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+/* Base Reset */
+* { 
+    box-sizing: border-box; 
+    -webkit-font-smoothing: antialiased; 
+    margin: 0; 
+    padding: 0;
+}
 
 body {
-    margin: 0;
     background: radial-gradient(circle at center, #1a1508 0%, #0a0a0a 100%);
     color: var(--text);
     font-family: var(--font-main);
@@ -21,26 +26,30 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden; /* Prevent body scroll to keep focus on player */
+    overflow: hidden; /* Empêche le scroll pour garder le focus sur le lecteur */
 }
 
-/* Container with Gold Halo Bloom effect */
+/* App Container avec Halo Doré Accentué */
 .app-container {
     display: flex;
     background: var(--bg-card);
     border-radius: 24px;
     width: 1000px;
     height: 780px;
-    max-height: 92vh;
+    max-height: 92vh; /* S'adapte à la hauteur de l'écran */
     overflow: hidden;
-    border: 1px solid rgba(212, 175, 55, 0.25);
-    /* Diffusion Shadow (Bloom) */
+    border: 1px solid rgba(212, 175, 55, 0.4); /* Bordure accentuée */
+    
+    /* Bloom Effect (Multi-couches pour l'intensité) */
     box-shadow: 
-        0 30px 60px rgba(0,0,0,0.8), 
-        0 0 80px rgba(212, 175, 55, 0.12),
-        0 0 150px rgba(212, 175, 55, 0.05);
+        0 30px 60px rgba(0, 0, 0, 0.9),            /* Ombre portée profonde */
+        0 0 40px rgba(212, 175, 55, 0.25),         /* Halo proche intense */
+        0 0 100px rgba(212, 175, 55, 0.15),        /* Halo moyen */
+        0 0 180px rgba(212, 175, 55, 0.1),         /* Halo large diffus */
+        inset 0 0 15px rgba(212, 175, 55, 0.05);   /* Lueur interne */
 }
 
+/* Section Lecteur (Gauche) */
 .player-section { 
     flex: 0 0 420px; 
     padding: 30px 25px; 
@@ -51,6 +60,7 @@ body {
     justify-content: space-between; 
 }
 
+/* Section Playlist (Droite) */
 .playlist-section { 
     flex: 1; 
     padding: 30px; 
@@ -69,6 +79,7 @@ body {
     width: 100%;
 }
 
+/* Textes et Labels */
 .section-header, .time-display span, .volume-label, #volume-percent {
     font-size: 10px; 
     text-transform: uppercase; 
@@ -79,13 +90,13 @@ body {
 
 .player-main-content { text-align: center; width: 100%; }
 
+/* Visualiseur et Art */
 .visualizer-container { 
     width: 100%; 
     height: 50px; 
     margin-bottom: 10px; 
-    background: transparent; 
 }
-#visualizer { width: 100%; height: 100%; display: block; }
+#visualizer { width: 100%; height: 100%; }
 
 .art-wrapper { 
     width: 210px; 
@@ -98,7 +109,15 @@ body {
 }
 #album-art { width: 100%; height: 100%; object-fit: cover; }
 
-#file-name { color: var(--accent); font-weight: 800; font-size: 1.1rem; margin-top: 15px; margin-bottom: 5px; }
+/* Titre et Artiste */
+#file-name { 
+    color: var(--accent); 
+    font-weight: 800; 
+    font-size: 1.1rem; 
+    margin-top: 15px; 
+    margin-bottom: 5px;
+    text-shadow: 0 0 10px rgba(212, 175, 55, 0.3); 
+}
 #artist-name { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 10px; height: 1.2rem; }
 
 .badge-format { 
@@ -111,6 +130,7 @@ body {
     text-transform: uppercase; 
 }
 
+/* Barre de progression */
 .progress-container { 
     width: 100%; 
     background: #000; 
@@ -118,17 +138,17 @@ body {
     border-radius: 10px; 
     cursor: pointer; 
     margin: 18px 0; 
-    overflow: hidden; 
     position: relative; 
+    overflow: hidden;
 }
 .progress-bar { height: 100%; background: var(--accent); position: absolute; }
 
-/* Control Buttons & Hover States */
+/* Actions principales (BACK - PLAY - NEXT) */
 .main-actions { 
     display: flex; 
     align-items: center; 
     justify-content: center; 
-    gap: 30px; 
+    gap: 30px; /* Espace réduit entre les boutons */
     margin-bottom: 25px; 
 }
 
@@ -143,11 +163,7 @@ body {
     cursor: pointer;
     transition: all 0.2s ease;
 }
-.play-pause-btn:hover { 
-    background: rgba(212, 175, 55, 0.1); 
-    color: var(--accent);
-    transform: scale(1.05); 
-}
+.play-pause-btn:hover { background: rgba(212, 175, 55, 0.1); transform: scale(1.05); }
 
 .nav-btn-alt { 
     background: #1f1f1f; 
@@ -161,7 +177,21 @@ body {
 }
 .nav-btn-alt:hover { color: var(--accent); transform: scale(1.1); }
 
-/* Bottom Bar Buttons */
+/* Volume */
+.volume-control { width: 100%; margin-bottom: 10px; }
+.volume-container { 
+    width: 100%; 
+    background: #000; 
+    height: 6px; 
+    border-radius: 10px; 
+    cursor: pointer; 
+    margin-top: 8px; 
+    position: relative; 
+    overflow: hidden;
+}
+.volume-bar { height: 100%; background: var(--accent); position: absolute; }
+
+/* Boutons de contrôle du bas (VU, Shuffle, Repeat, Mute) */
 .nav-controls { 
     display: flex; 
     gap: 8px; 
@@ -181,27 +211,13 @@ body {
 }
 .nav-btn:hover { color: var(--accent); background: #252525; }
 
-/* Volume Section */
-.volume-control { width: 100%; margin-bottom: 10px; }
-.volume-container { 
-    width: 100%; 
-    background: #000; 
-    height: 6px; 
-    border-radius: 10px; 
-    cursor: pointer; 
-    margin-top: 8px; 
-    overflow: hidden; 
-    position: relative; 
-}
-.volume-bar { height: 100%; background: var(--accent); position: absolute; }
-
-/* States Priority */
+/* États de couleur pour les boutons actifs */
 .vu-active, .shuffle-active { color: var(--accent) !important; border-color: rgba(212, 175, 55, 0.4) !important; }
 .mute-active { color: var(--danger) !important; border-color: rgba(255, 68, 68, 0.4) !important; }
 .rep-one { color: var(--blue-info) !important; border-color: rgba(0, 170, 255, 0.4) !important; }
 .rep-all { color: var(--green-success) !important; border-color: rgba(46, 204, 113, 0.4) !important; }
 
-/* Playlist Styling */
+/* Playlist */
 .playlist-items { overflow-y: auto; flex: 1; }
 .playlist-item { 
     padding: 10px; 
@@ -209,12 +225,11 @@ body {
     cursor: pointer; 
     color: var(--text-dim); 
     font-size: 0.85rem; 
-    transition: color 0.2s;
 }
 .playlist-item:hover { color: var(--accent); }
 .playlist-item.active { color: var(--accent); background: rgba(212, 175, 55, 0.05); }
 
-/* Upload & Clear (Static Styles as requested) */
+/* Upload & Clear */
 .upload-btn { 
     background: var(--accent); 
     color: #000; 
@@ -234,3 +249,9 @@ body {
     font-weight: 800; 
     cursor: pointer; 
 }
+
+/* Scrollbar Custom pour le mode sombre */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: #121212; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }

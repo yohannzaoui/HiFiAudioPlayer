@@ -44,6 +44,7 @@
             <div id="artist-name" class="text-truncate"></div>
         </div>
         <audio id="player"></audio>
+        
         <div class="custom-controls">
             <div class="time-display d-flex justify-content-between">
                 <span id="current-time">0:00</span>
@@ -52,9 +53,13 @@
             <div class="progress-container" id="progress-container">
                 <div class="progress-bar" id="progress-bar" style="width: 0%;"></div>
             </div>
-            <div class="main-actions py-4">
+
+            <div class="main-actions py-4 d-flex align-items-center justify-content-center gap-3">
+                <button class="nav-btn-alt" onclick="prevTrack()"><i class="fas fa-backward-step"></i></button>
                 <button class="play-pause-btn" id="play-pause-btn">PLAY</button>
+                <button class="nav-btn-alt" onclick="nextTrack()"><i class="fas fa-forward-step"></i></button>
             </div>
+
             <div class="volume-control">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <span class="volume-label">VOL</span>
@@ -65,14 +70,14 @@
                 </div>
             </div>
         </div>
+
         <div class="nav-controls mt-4">
-            <button class="nav-btn" onclick="prevTrack()"><i class="fas fa-backward-step"></i></button>
-            <button class="nav-btn" onclick="nextTrack()"><i class="fas fa-forward-step"></i></button>
             <button class="nav-btn" id="shuffle-btn" onclick="shufflePlaylist()">Shuffle</button>
             <button class="nav-btn" id="repeat-btn" onclick="toggleRepeat()">Rep: OFF</button>
             <button class="nav-btn" id="mute-btn" onclick="toggleMute()">Mute: OFF</button>
         </div>
     </div>
+
     <div class="col-md-7 playlist-section">
         <div class="playlist-header-row">
             <div class="section-header">Playlist Queue</div>

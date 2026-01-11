@@ -1,3 +1,11 @@
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('Service Worker Registered'))
+            .catch(err => console.log('Service Worker Failed', err));
+    });
+}
+
 const player = document.getElementById('player');
 const playPauseBtn = document.getElementById('play-pause-btn');
 const progressBar = document.getElementById('progress-bar');

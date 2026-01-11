@@ -1,8 +1,6 @@
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('Service Worker Registered'))
-            .catch(err => console.log('Service Worker Failed', err));
+        navigator.serviceWorker.register('./sw.js').catch(err => console.log(err));
     });
 }
 
@@ -24,10 +22,8 @@ let playlist = [];
 let currentIndex = 0;
 let isShuffle = false;
 let repeatMode = 'OFF';
-
-// Peak Hold Logic
 let peaks = [];
-const PEAK_FALL_SPEED = 1.2;
+const PEAK_FALL_SPEED = 1.0;
 
 window.addEventListener('resize', () => {
     canvas.width = canvas.clientWidth;
@@ -42,13 +38,13 @@ function setupVisualizer() {
         analyzer = audioCtx.createAnalyser();
         source.connect(analyzer);
         analyzer.connect(audioCtx.destination);
-        analyzer.fftSize = 64; 
+        analyzer.fftSize = 64; // 32 Bars
         dataArray = new Uint8Array(analyzer.frequencyBinCount);
         isVisualizerSetup = true;
         canvas.width = canvas.clientWidth;
         canvas.height = canvas.clientHeight;
         draw();
-    } catch (e) { console.error("AudioContext error:", e); }
+    } catch (e) { console.error(e); }
 }
 
 function draw() {
@@ -57,24 +53,28 @@ function draw() {
     if (!isVisualizerEnabled || !isVisualizerSetup) return;
 
     analyzer.getByteFrequencyData(dataArray);
-    const barWidth = (canvas.width / dataArray.length) * 2.5;
+    const barWidth = (canvas.width / dataArray.length);
     let x = 0;
 
     for (let i = 0; i < dataArray.length; i++) {
         let barHeight = (dataArray[i] / 255) * canvas.height;
+        if (!peaks[i] || barHeight > peaks[i]) peaks[i] = barHeight;
+        else peaks[i] -= PEAK_FALL_SPEED;
 
-        if (!peaks[i] || barHeight > peaks[i]) { peaks[i] = barHeight; } 
-        else { peaks[i] -= PEAK_FALL_SPEED; }
+        const grad = canvasCtx.createLinearGradient(0, canvas.height, 0, 0);
+        grad.addColorStop(0, '#8a6d1d');
+        grad.addColorStop(0.6, '#d4af37');
+        grad.addColorStop(1, '#f9e79f');
 
-        const gradient = canvasCtx.createLinearGradient(0, canvas.height, 0, 0);
-        gradient.addColorStop(0, '#8a6d1d');
-        gradient.addColorStop(0.6, '#d4af37');
-        gradient.addColorStop(1, '#f9e79f');
-
-        canvasCtx.fillStyle = gradient;
+        canvasCtx.fillStyle = grad;
         canvasCtx.fillRect(x, canvas.height - barHeight, barWidth - 2, barHeight);
-        canvasCtx.fillStyle = '#ffffff';
+
+        // Neon Orange Peaks
+        canvasCtx.shadowBlur = 4;
+        canvasCtx.shadowColor = '#ff6600';
+        canvasCtx.fillStyle = '#ff6600';
         canvasCtx.fillRect(x, canvas.height - peaks[i] - 2, barWidth - 2, 2);
+        canvasCtx.shadowBlur = 0;
 
         x += barWidth;
     }
@@ -85,19 +85,16 @@ function extractMetadata(file) {
         onSuccess: function(tag) {
             const t = tag.tags;
             document.getElementById('artist-name').innerText = t.artist || "Unknown Artist";
-            document.getElementById('format-badge').innerText = file.name.split('.').pop();
-            document.getElementById('format-badge').style.display = 'inline-block';
+            const badge = document.getElementById('format-badge');
+            badge.innerText = file.name.split('.').pop();
+            badge.style.display = 'inline-block';
             if (t.picture) {
                 const { data, format } = t.picture;
-                let base64String = "";
-                for (let i = 0; i < data.length; i++) base64String += String.fromCharCode(data[i]);
-                document.getElementById('album-art').src = `data:${format};base64,${window.btoa(base64String)}`;
+                let base64 = "";
+                for (let i = 0; i < data.length; i++) base64 += String.fromCharCode(data[i]);
+                document.getElementById('album-art').src = `data:${format};base64,${window.btoa(base64)}`;
                 document.getElementById('art-container').style.display = 'block';
             } else { document.getElementById('art-container').style.display = 'none'; }
-        },
-        onError: function() {
-            document.getElementById('artist-name').innerText = "";
-            document.getElementById('art-container').style.display = 'none';
         }
     });
 }
@@ -124,7 +121,7 @@ function renderPlaylist() {
 function playTrack(idx) {
     if (!playlist[idx]) return;
     if (!isVisualizerSetup) setupVisualizer();
-    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
     currentIndex = idx;
     player.src = playlist[idx].url;
     player.play();
@@ -136,32 +133,26 @@ function playTrack(idx) {
 
 playPauseBtn.onclick = () => {
     if (!player.src && playlist.length > 0) { playTrack(0); return; }
-    if (!player.src) return;
     if (!isVisualizerSetup) setupVisualizer();
-    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
     player.paused ? (player.play(), playPauseBtn.innerText = 'PAUSE') : (player.pause(), playPauseBtn.innerText = 'PLAY');
 };
 
 function nextTrack() {
     if (playlist.length === 0) return;
-    if (repeatMode === 'ONE') { playTrack(currentIndex); } 
+    if (repeatMode === 'ONE') playTrack(currentIndex);
     else {
-        let next = (currentIndex + 1) % playlist.length;
-        if (isShuffle) next = Math.floor(Math.random() * playlist.length);
+        let next = isShuffle ? Math.floor(Math.random() * playlist.length) : (currentIndex + 1) % playlist.length;
         playTrack(next);
     }
 }
 
 function prevTrack() {
     if (playlist.length === 0) return;
-    if (repeatMode === 'ONE') { playTrack(currentIndex); }
-    else { playTrack((currentIndex - 1 + playlist.length) % playlist.length); }
+    playTrack(repeatMode === 'ONE' ? currentIndex : (currentIndex - 1 + playlist.length) % playlist.length);
 }
 
-player.onended = () => {
-    if (repeatMode === 'ONE') playTrack(currentIndex);
-    else nextTrack();
-};
+player.onended = () => repeatMode === 'ONE' ? playTrack(currentIndex) : nextTrack();
 
 player.ontimeupdate = () => {
     if (!player.duration) return;

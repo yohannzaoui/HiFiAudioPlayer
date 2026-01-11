@@ -20,7 +20,7 @@ body {
     overflow: hidden;
 }
 
-/* --- EXCLUSIVE DISPLAY (MOBILE VS DESKTOP) --- */
+/* --- EXCLUSIVE DISPLAY --- */
 #mobile-blocker { display: none; }
 .app-container { display: none !important; }
 
@@ -36,6 +36,15 @@ body {
         box-shadow: 0 0 100px rgba(212, 175, 55, 0.15), 0 0 40px rgba(0, 0, 0, 0.8);
     }
 }
+
+/* --- ANIMATIONS FEEDBACK --- */
+@keyframes blink-active {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(0.92); filter: brightness(1.5); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+.blink-effect { animation: blink-active 0.25s ease-out; }
 
 /* --- PLAYER UI --- */
 .player-section { flex: 0 0 430px; padding: 40px 20px; border-right: 1px solid #222; text-align: center; display: flex; flex-direction: column; justify-content: space-between; }
@@ -59,13 +68,12 @@ body {
 .nav-btn { background: #1f1f1f; border: none; color: var(--text-dim); height: 40px; flex: 1; border-radius: 8px; font-size: 10px; font-weight: 800; text-transform: uppercase; transition: 0.3s; }
 .nav-btn:hover { color: var(--accent); }
 
-/* Toggle States */
 .shuffle-active { color: var(--accent) !important; }
 .rep-one { color: var(--blue-info) !important; }
 .rep-all { color: var(--green-success) !important; }
 .mute-active { color: var(--danger) !important; }
 
-/* --- PROGRESS BARS (INSET SHADOW) --- */
+/* --- PROGRESS BARS --- */
 .progress-container, .volume-container {
     width: 100%; background: #000; border-radius: 10px; height: 8px; margin-top: 10px;
     box-shadow: inset 0 2px 4px rgba(0,0,0,0.8); overflow: hidden; position: relative; cursor: pointer;
@@ -75,7 +83,7 @@ body {
     height: 100%; border-radius: 10px; box-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
 }
 
-/* --- PLAYLIST STYLING --- */
+/* --- PLAYLIST --- */
 .playlist-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 1px solid #222; padding-bottom: 15px; }
 
 .playlist-items {
@@ -84,7 +92,6 @@ body {
     mask-image: linear-gradient(to bottom, transparent 0%, black 5%, black 95%, transparent 100%);
 }
 .playlist-items::-webkit-scrollbar { width: 6px; }
-.playlist-items::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
 .playlist-items::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
 .playlist-items::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
